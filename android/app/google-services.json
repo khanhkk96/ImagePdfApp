@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "266315987405",
+    "project_id": "imagepdfapp",
+    "storage_bucket": "imagepdfapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:266315987405:android:922a3d5d51d3bab459ec84",
+        "android_client_info": {
+          "package_name": "com.example.make_pdf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "266315987405-rbp58te4v1mg5h0ng1ems6ifkgsiadjh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.make_pdf",
+            "certificate_hash": "73a00e3b7f7787084b8d476628774e81b650ce56"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuNaggTMsXk6HUpIqDcgsf_YldNY__QKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,13 +1,15 @@
-import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart';
 
 void main() {
   runApp(const MyApp());
@@ -56,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
     };
 
     showDialog(
-        context: context,
+        context: this.context,
         builder: (context) {
           return Center(
             child: Wrap(children: [
@@ -76,6 +78,101 @@ class _MyHomePageState extends State<MyHomePage> {
             ]),
           );
         });
+  }
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      'https://www.googleapis.com/auth/drive.file',
+    ],
+  );
+
+  Future<String?> getAccessToken() async {
+    try {
+      await _googleSignIn.signOut();
+      final GoogleSignInAccount? googleSignInAccount = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication googleSignInAuthentication =
+      await googleSignInAccount!.authentication;
+      return googleSignInAuthentication.accessToken;
+    } catch (error) {
+      print('Error signing in: $error');
+      return null;
+    }
+  }
+
+  Future<void> uploadPDF(String accessToken, String filePath) async {
+    // final authHeaders = {
+    //   'Authorization': 'Bearer $accessToken',
+    //   'Content-Type': 'application/json',
+    // };
+    //
+    // final client = http.Client();
+    //
+    // File file = File(filePath);
+    // String filename = basename(file.path);
+    //
+    // // Create a file metadata object
+    // final fileMetadata = drive.File()
+    //   ..name = filename // Set the desired filename
+    //   ..mimeType = 'application/pdf';
+    //
+    // // Create a multipart request
+    // final request = http.MultipartRequest(
+    //   'POST',
+    //   Uri.parse('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'),
+    // );
+    //
+    // // Add headers
+    // request.headers.addAll(authHeaders);
+    //
+    // // Add file metadata as JSON
+    // // print('meta:  ${fileMetadata.toJson()}');
+    // print('meta:  ${fileMetadata.toJson().toString()}');
+    // request.files.add(http.MultipartFile.fromString(
+    //   'metadata',
+    //   fileMetadata.toJson().toString(),
+    //   contentType: MediaType('application', 'json'),
+    // ));
+    //
+    // // Add the PDF file content
+    // request.files.add(await http.MultipartFile.fromPath(
+    //   'media',
+    //   filePath,
+    // ));
+    // print('added file');
+    //
+    // // Send the request
+    // final response = await request.send();
+    // print('response: ${response.toString()}');
+    //
+    // // Handle the response
+    // if (response.statusCode == 200) {
+    //   print('PDF uploaded successfully.');
+    // } else {
+    //   print('Error uploading PDF: ${response.reasonPhrase}');
+    // }
+    //
+    // client.close();
+
+    File file = File(filePath);
+    String filename = basename(file.path);
+
+    var res = await http.post(
+      Uri.parse('https://www.googleapis.com/upload/drive/v3/files?uploadType=media'),
+      body: file.readAsBytesSync(),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json'
+      },
+    );
+    if (res.statusCode == 200) {
+      print('PDF uploaded successfully.');
+      //return res.body;
+    } else {
+      Map json = jsonDecode(res.body);
+      throw ('${json['error']['message']}');
+    }
+
+    // await _googleSignIn.signOut();
   }
 
   Future<void> _generatePdf() async {
@@ -103,10 +200,19 @@ class _MyHomePageState extends State<MyHomePage> {
     final DateTime now = DateTime.now();
     final DateFormat formatter = DateFormat('yyyy-MM-dd_HH-mm-ss_ms');
     final String filename = formatter.format(now);
+    final String filePath = '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
     final file =
-        File('${Directory('/storage/emulated/0/Download').path}/$filename.pdf');
-    // print("result: ${file.path}");
+        File(filePath);
+    print("result: ${filePath}");
     await file.writeAsBytes(await pdf.save());
+
+    // Get the access token
+    final accessToken = await getAccessToken();
+
+    if (accessToken != null) {
+      // Upload the PDF file
+      await uploadPDF(accessToken, filePath);
+    }
 
     notify("Tạo file pdf thành công.", NotifyType.SUCCESS);
   }
