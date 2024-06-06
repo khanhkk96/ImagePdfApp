@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -51,6 +52,7 @@ enum NotifyType {
 class _MyHomePageState extends State<MyHomePage> {
   List<XFile> images = [];
   String fileUrl = '';
+  bool isProcessing = false;
 
   void notify(String message, NotifyType type) {
     var mapTypes = <NotifyType, Color>{
@@ -201,8 +203,6 @@ class _MyHomePageState extends State<MyHomePage> {
       await shareFileWithUser(accessToken, fileId);
 
       notify("Đã tải file pdf lên Google Drive ở chế độ công khai.", NotifyType.SUCCESS);
-      // notify("Đã sao chép đường dẫn file PDF trong bộ nhớ tạm.",
-      //     NotifyType.SUCCESS);
     } else {
       notify("Tạo file pdf không thành công.", NotifyType.ERROR);
       await file.delete();
@@ -217,6 +217,21 @@ class _MyHomePageState extends State<MyHomePage> {
       notify("Chưa chọn hình ảnh!", NotifyType.ERROR);
       return;
     }
+
+    if (isProcessing) {
+      // notify("Đang xử lý tác vụ khác!", NotifyType.WARNING);
+      Fluttertoast.showToast(
+          msg: "Đang xử lý tác vụ khác!",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 2,
+          backgroundColor: Colors.white,
+          textColor: Colors.orange,
+          fontSize: 16.0
+      );
+      return;
+    }
+    isProcessing = true;
 
     final pdf = pw.Document();
 
@@ -249,9 +264,11 @@ class _MyHomePageState extends State<MyHomePage> {
     if (accessToken != null) {
       // Upload the PDF file
       await uploadPDF(accessToken, filePath);
+      isProcessing = false;
     } else {
       notify(
           "Bạn chưa cấp quyền tải file lên Google Drive", NotifyType.WARNING);
+      isProcessing = false;
     }
   }
 
@@ -308,6 +325,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: GestureDetector(
                   onTap: () async {
                     Clipboard.setData(ClipboardData(text: fileUrl));
+                    Fluttertoast.showToast(
+                        msg: "Đã sao chép vào bộ nhớ",
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
+                        timeInSecForIosWeb: 2,
+                        backgroundColor: Colors.white,
+                        textColor: Colors.cyan,
+                        fontSize: 16.0
+                    );
                   },
                   child: Container(
                     margin: const EdgeInsets.only(
@@ -343,7 +369,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _generatePdf,
+        onPressed: !isProcessing ? _generatePdf: null,
         tooltip: 'Tạo file pdf',
         child: const Icon(Icons.upload_file),
       ),
