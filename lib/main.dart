@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +25,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'PDF Maker App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'PDF Maker'),
@@ -49,9 +50,10 @@ enum NotifyType {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<XFile> images = [];
+  String fileUrl = '';
 
-  void notify(String message, NotifyType type){
-    var mapTypes = <NotifyType,Color>{
+  void notify(String message, NotifyType type) {
+    var mapTypes = <NotifyType, Color>{
       NotifyType.SUCCESS: Colors.blue,
       NotifyType.WARNING: Colors.orange,
       NotifyType.ERROR: Colors.red,
@@ -63,15 +65,17 @@ class _MyHomePageState extends State<MyHomePage> {
           return Center(
             child: Wrap(children: [
               Container(
+                  margin: const EdgeInsets.all(20),
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.all(Radius.circular(10))),
-                  child:  Text(
+                  child: Text(
                     message,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                         color: mapTypes[type],
-                        fontSize: 24.0,
+                        fontSize: 16.0,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.none),
                   )),
@@ -89,9 +93,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<String?> getAccessToken() async {
     try {
       await _googleSignIn.signOut();
-      final GoogleSignInAccount? googleSignInAccount = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleSignInAccount =
+          await _googleSignIn.signIn();
       final GoogleSignInAuthentication googleSignInAuthentication =
-      await googleSignInAccount!.authentication;
+          await googleSignInAccount!.authentication;
       return googleSignInAuthentication.accessToken;
     } catch (error) {
       print('Error signing in: $error');
@@ -99,80 +104,112 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> shareFileWithUser(String accessToken, String fileId,
+      {String? userEmail}) async {
+    final headers = {
+      'Authorization': 'Bearer $accessToken',
+      'Content-Type': 'application/json',
+    };
+
+    final client = http.Client();
+
+    // Create a permission object
+    final permission = drive.Permission()
+      ..type = 'anyone'
+      ..role = 'writer';
+    // ..emailAddress = userEmail;
+
+    try {
+      final response = await client.post(
+        Uri.parse(
+            'https://www.googleapis.com/drive/v3/files/$fileId/permissions'),
+        headers: headers,
+        body: jsonEncode(permission.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {});
+        print('Permission granted successfully.');
+      } else {
+        print('Error granting permission: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Error granting permission: $e');
+    } finally {
+      client.close();
+    }
+  }
+
   Future<void> uploadPDF(String accessToken, String filePath) async {
-    // final authHeaders = {
-    //   'Authorization': 'Bearer $accessToken',
-    //   'Content-Type': 'application/json',
-    // };
-    //
-    // final client = http.Client();
-    //
-    // File file = File(filePath);
-    // String filename = basename(file.path);
-    //
-    // // Create a file metadata object
-    // final fileMetadata = drive.File()
-    //   ..name = filename // Set the desired filename
-    //   ..mimeType = 'application/pdf';
-    //
-    // // Create a multipart request
-    // final request = http.MultipartRequest(
-    //   'POST',
-    //   Uri.parse('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'),
-    // );
-    //
-    // // Add headers
-    // request.headers.addAll(authHeaders);
-    //
-    // // Add file metadata as JSON
-    // // print('meta:  ${fileMetadata.toJson()}');
-    // print('meta:  ${fileMetadata.toJson().toString()}');
-    // request.files.add(http.MultipartFile.fromString(
-    //   'metadata',
-    //   fileMetadata.toJson().toString(),
-    //   contentType: MediaType('application', 'json'),
-    // ));
-    //
-    // // Add the PDF file content
-    // request.files.add(await http.MultipartFile.fromPath(
-    //   'media',
-    //   filePath,
-    // ));
-    // print('added file');
-    //
-    // // Send the request
-    // final response = await request.send();
-    // print('response: ${response.toString()}');
-    //
-    // // Handle the response
-    // if (response.statusCode == 200) {
-    //   print('PDF uploaded successfully.');
-    // } else {
-    //   print('Error uploading PDF: ${response.reasonPhrase}');
-    // }
-    //
-    // client.close();
+    fileUrl = '';
+    setState(() {});
+    final authHeaders = {
+      'Authorization': 'Bearer $accessToken',
+      // 'Content-Type': 'application/json',
+    };
+
+    final client = http.Client();
 
     File file = File(filePath);
     String filename = basename(file.path);
 
-    var res = await http.post(
-      Uri.parse('https://www.googleapis.com/upload/drive/v3/files?uploadType=media'),
-      body: file.readAsBytesSync(),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json'
-      },
+    // Create a file metadata object
+    final fileMetadata = drive.File()
+      ..name = filename // Set the desired filename
+      ..mimeType = 'application/pdf';
+
+    // Create a multipart request
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(
+          'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'),
     );
-    if (res.statusCode == 200) {
-      print('PDF uploaded successfully.');
-      //return res.body;
+
+    // Add headers
+    request.headers.addAll(authHeaders);
+
+    // Add file metadata as JSON
+    // print('meta:  ${fileMetadata.toJson().toString()}');
+    request.files.add(http.MultipartFile.fromString(
+      'metadata',
+      jsonEncode(fileMetadata),
+      contentType: MediaType('application', 'json'),
+    ));
+
+    // Add the PDF file content
+    request.files.add(await http.MultipartFile.fromPath(
+      'media',
+      filePath,
+      contentType: MediaType('application', 'pdf'),
+    ));
+    // print('added file: ${request}');
+
+    // Send the request
+    final response = await request.send();
+
+    // Handle the response
+    if (response.statusCode == 200) {
+      print('PDF uploaded successfully!');
+      final responseBody = await response.stream.bytesToString();
+      final jsonResponse = jsonDecode(responseBody);
+      final fileId = jsonResponse['id'] as String;
+      // print('fileID: $jsonResponse');
+
+      fileUrl = 'https://drive.google.com/file/d/$fileId/view';
+
+      //share permission
+      await shareFileWithUser(accessToken, fileId);
+
+      notify("Đã tải file pdf lên Google Drive ở chế độ công khai.", NotifyType.SUCCESS);
+      // notify("Đã sao chép đường dẫn file PDF trong bộ nhớ tạm.",
+      //     NotifyType.SUCCESS);
     } else {
-      Map json = jsonDecode(res.body);
-      throw ('${json['error']['message']}');
+      notify("Tạo file pdf không thành công.", NotifyType.ERROR);
+      await file.delete();
+      print('Error uploading PDF: ${response.reasonPhrase}');
     }
 
-    // await _googleSignIn.signOut();
+    client.close();
   }
 
   Future<void> _generatePdf() async {
@@ -200,10 +237,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final DateTime now = DateTime.now();
     final DateFormat formatter = DateFormat('yyyy-MM-dd_HH-mm-ss_ms');
     final String filename = formatter.format(now);
-    final String filePath = '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
-    final file =
-        File(filePath);
-    print("result: ${filePath}");
+    final String filePath =
+        '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
+    final file = File(filePath);
+    // print("result: ${filePath}");
     await file.writeAsBytes(await pdf.save());
 
     // Get the access token
@@ -212,9 +249,10 @@ class _MyHomePageState extends State<MyHomePage> {
     if (accessToken != null) {
       // Upload the PDF file
       await uploadPDF(accessToken, filePath);
+    } else {
+      notify(
+          "Bạn chưa cấp quyền tải file lên Google Drive", NotifyType.WARNING);
     }
-
-    notify("Tạo file pdf thành công.", NotifyType.SUCCESS);
   }
 
   Future<void> _pickImages() async {
@@ -237,7 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
               flex: 10,
               child: Container(
                 margin: const EdgeInsets.only(
-                    top: 16.0, left: 16.0, right: 16.0, bottom: 16),
+                    top: 16, left: 16, right: 16, bottom: 16),
                 // Set top and left margins
                 child: GridView.builder(
                     itemCount: images.length,
@@ -245,16 +283,47 @@ class _MyHomePageState extends State<MyHomePage> {
                       return SizedBox(
                         height: MediaQuery.of(context).size.height,
                         width: MediaQuery.of(context).size.width,
-                        child: Image.file(File(images[index].path), fit: BoxFit.contain,),
+                        child: Image.file(
+                          File(images[index].path),
+                          fit: BoxFit.contain,
+                        ),
                       );
                     },
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10
-                        )),
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10)),
               )),
+          Row(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(
+                    top: 8, left: 16, right: 4, bottom: 8),
+                child: const Text(
+                  "File URL: ",
+                ),
+              ),
+              Flexible(
+                child: GestureDetector(
+                  onTap: () async {
+                    Clipboard.setData(ClipboardData(text: fileUrl));
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(
+                        top: 8, left: 4, right: 16, bottom: 8),
+                    child: Text(
+                      fileUrl,
+                      overflow: TextOverflow.clip,
+                      style: const TextStyle(
+                          decoration: TextDecoration.underline,
+                          color: Colors.blue),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           Flexible(
               flex: 1,
               child: Container(
@@ -264,8 +333,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   onPressed: _pickImages,
                   style: ButtonStyle(
                     side: MaterialStateProperty.all(const BorderSide(
-                      color: Colors.blue,
-                      width: 1.0,
+                      color: Colors.lightBlueAccent,
+                      width: 2.0,
                     )),
                   ),
                   child: const Text("Chọn hình ảnh"),
@@ -276,7 +345,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _generatePdf,
         tooltip: 'Tạo file pdf',
-        child: const Icon(Icons.settings),
+        child: const Icon(Icons.upload_file),
       ),
     );
   }
