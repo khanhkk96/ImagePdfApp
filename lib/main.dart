@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,6 +13,8 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart';
+
+import 'loading.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,7 +32,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'PDF Maker'),
+      home: const Scaffold(
+        body: LoadingWidget(),
+      ),
     );
   }
 }
@@ -41,6 +46,43 @@ class MyHomePage extends StatefulWidget {
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
+}
+
+// LOADING.....
+class LoadingWidget extends StatefulWidget {
+  const LoadingWidget({super.key});
+
+  @override
+  _LoadingWidgetState createState() => _LoadingWidgetState();
+}
+
+class _LoadingWidgetState extends State<LoadingWidget> {
+  bool isLoading = false;
+
+  void fetchData() async {
+    setState(() { isLoading = true; });
+
+    // Simulate a delay (replace with your actual operation)
+    await Future.delayed(const Duration(seconds: 20));
+
+    setState(() { isLoading = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Center(child: MyHomePage(title: 'PDF Maker')),
+        if (isLoading)
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 enum NotifyType {
@@ -212,6 +254,16 @@ class _MyHomePageState extends State<MyHomePage> {
     client.close();
   }
 
+  Future<Uint8List?> compressImage(Uint8List imageData) async {
+    final result = await FlutterImageCompress.compressWithList(
+      imageData,
+      minHeight: 1920, // Adjust as needed
+      minWidth: 1080, // Adjust as needed
+      quality: 50, // Compression quality (0-100)
+    );
+    return result;
+  }
+
   Future<void> _generatePdf() async {
     if (images.isEmpty) {
       notify("Chưa chọn hình ảnh!", NotifyType.ERROR);
@@ -238,9 +290,15 @@ class _MyHomePageState extends State<MyHomePage> {
     for (XFile file in images) {
       // print("file: ${file.path}");
 
+      //compress the quality of image
+      var compressedImage = await compressImage(await file.readAsBytes());
       final image = pw.MemoryImage(
-        File(file.path).readAsBytesSync(),
+          compressedImage!
       );
+
+      // final image = pw.MemoryImage(
+      //   File(file.path).readAsBytesSync(),
+      // );
 
       pdf.addPage(
         pw.Page(
