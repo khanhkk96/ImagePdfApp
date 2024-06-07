@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: LoadingWidget(),
+        body: MyHomePage(title: 'Pdf Maker'),
       ),
     );
   }
@@ -48,43 +48,6 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// LOADING.....
-class LoadingWidget extends StatefulWidget {
-  const LoadingWidget({super.key});
-
-  @override
-  _LoadingWidgetState createState() => _LoadingWidgetState();
-}
-
-class _LoadingWidgetState extends State<LoadingWidget> {
-  bool isLoading = false;
-
-  void fetchData() async {
-    setState(() { isLoading = true; });
-
-    // Simulate a delay (replace with your actual operation)
-    await Future.delayed(const Duration(seconds: 20));
-
-    setState(() { isLoading = false; });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const Center(child: MyHomePage(title: 'PDF Maker')),
-        if (isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.5),
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 enum NotifyType {
   SUCCESS,
   WARNING,
@@ -95,6 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<XFile> images = [];
   String fileUrl = '';
   bool isProcessing = false;
+  bool isLoading =false;
 
   void notify(String message, NotifyType type) {
     var mapTypes = <NotifyType, Color>{
@@ -284,6 +248,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
     isProcessing = true;
+    setState(() { isLoading = true; });
 
     final pdf = pw.Document();
 
@@ -323,10 +288,12 @@ class _MyHomePageState extends State<MyHomePage> {
       // Upload the PDF file
       await uploadPDF(accessToken, filePath);
       isProcessing = false;
+      setState(() { isLoading = false; });
     } else {
       notify(
           "Bạn chưa cấp quyền tải file lên Google Drive", NotifyType.WARNING);
       isProcessing = false;
+      setState(() { isLoading = false; });
     }
   }
 
@@ -343,87 +310,92 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          Expanded(
-              flex: 10,
-              child: Container(
-                margin: const EdgeInsets.only(
-                    top: 16, left: 16, right: 16, bottom: 16),
-                // Set top and left margins
-                child: GridView.builder(
-                    itemCount: images.length,
-                    itemBuilder: (ctx, index) {
-                      return SizedBox(
-                        height: MediaQuery.of(context).size.height,
-                        width: MediaQuery.of(context).size.width,
-                        child: Image.file(
-                          File(images[index].path),
-                          fit: BoxFit.contain,
-                        ),
-                      );
-                    },
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10)),
-              )),
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                margin: const EdgeInsets.only(
-                    top: 8, left: 16, right: 4, bottom: 8),
-                child: const Text(
-                  "File URL: ",
-                ),
-              ),
-              Flexible(
-                child: GestureDetector(
-                  onTap: () async {
-                    Clipboard.setData(ClipboardData(text: fileUrl));
-                    Fluttertoast.showToast(
-                        msg: "Đã sao chép vào bộ nhớ",
-                        toastLength: Toast.LENGTH_SHORT,
-                        gravity: ToastGravity.BOTTOM,
-                        timeInSecForIosWeb: 2,
-                        backgroundColor: Colors.white,
-                        textColor: Colors.cyan,
-                        fontSize: 16.0
-                    );
-                  },
+              Expanded(
+                  flex: 10,
                   child: Container(
                     margin: const EdgeInsets.only(
-                        top: 8, left: 4, right: 16, bottom: 8),
-                    child: Text(
-                      fileUrl,
-                      overflow: TextOverflow.clip,
-                      style: const TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.blue),
+                        top: 16, left: 16, right: 16, bottom: 16),
+                    // Set top and left margins
+                    child: GridView.builder(
+                        itemCount: images.length,
+                        itemBuilder: (ctx, index) {
+                          return SizedBox(
+                            height: MediaQuery.of(context).size.height,
+                            width: MediaQuery.of(context).size.width,
+                            child: Image.file(
+                              File(images[index].path),
+                              fit: BoxFit.contain,
+                            ),
+                          );
+                        },
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10)),
+                  )),
+              Row(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(
+                        top: 8, left: 16, right: 4, bottom: 8),
+                    child: const Text(
+                      "File URL: ",
                     ),
                   ),
-                ),
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: () async {
+                        Clipboard.setData(ClipboardData(text: fileUrl));
+                        Fluttertoast.showToast(
+                            msg: "Đã sao chép vào bộ nhớ",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            timeInSecForIosWeb: 2,
+                            backgroundColor: Colors.white,
+                            textColor: Colors.cyan,
+                            fontSize: 16.0
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(
+                            top: 8, left: 4, right: 16, bottom: 8),
+                        child: Text(
+                          fileUrl,
+                          overflow: TextOverflow.clip,
+                          style: const TextStyle(
+                              decoration: TextDecoration.underline,
+                              color: Colors.blue),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              Flexible(
+                  flex: 1,
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 16.0),
+                    // Set top and left margins
+                    child: OutlinedButton(
+                      onPressed: _pickImages,
+                      style: ButtonStyle(
+                        side: MaterialStateProperty.all(const BorderSide(
+                          color: Colors.lightBlueAccent,
+                          width: 2.0,
+                        )),
+                      ),
+                      child: const Text("Chọn hình ảnh"),
+                    ),
+                  ))
             ],
           ),
-          Flexible(
-              flex: 1,
-              child: Container(
-                margin: const EdgeInsets.only(left: 16.0),
-                // Set top and left margins
-                child: OutlinedButton(
-                  onPressed: _pickImages,
-                  style: ButtonStyle(
-                    side: MaterialStateProperty.all(const BorderSide(
-                      color: Colors.lightBlueAccent,
-                      width: 2.0,
-                    )),
-                  ),
-                  child: const Text("Chọn hình ảnh"),
-                ),
-              ))
+         if(isLoading) Center(child: CircularProgressIndicator())
         ],
       ),
       floatingActionButton: FloatingActionButton(
