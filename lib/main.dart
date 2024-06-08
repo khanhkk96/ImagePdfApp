@@ -14,8 +14,6 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart';
 
-import 'loading.dart';
-
 void main() {
   runApp(const MyApp());
 }
@@ -33,7 +31,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: MyHomePage(title: 'Pdf Maker'),
+        body: MyHomePage(title: 'Submit homework'),
       ),
     );
   }
