@@ -221,7 +221,7 @@ class _MyHomePageState extends State<MyHomePage> {
       imageData,
       minHeight: 1920, // Adjust as needed
       minWidth: 1080, // Adjust as needed
-      quality: 50, // Compression quality (0-100)
+      quality: 70, // Compression quality (0-100)
     );
     return result;
   }
@@ -393,7 +393,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ))
             ],
           ),
-         if(isLoading) Center(child: CircularProgressIndicator())
+         if(isLoading) const Center(child: CircularProgressIndicator())
         ],
       ),
       floatingActionButton: FloatingActionButton(
