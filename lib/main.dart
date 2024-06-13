@@ -1,14 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:make_pdf/utils.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:video_player/video_player.dart';
 
 import 'google.dart';
 
@@ -51,22 +47,9 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isProcessing = false;
   bool isLoading = false;
 
-  // VideoPlayerController? _controller;
-
-  // void _initializeVideoPlayer(String path) {
-  //   _controller = VideoPlayerController.file(File(path));
-  //   setState(() {});
-  // }
-
-  // @override
-  // void dispose() {
-  //   _controller?.dispose();
-  //   super.dispose();
-  // }
-
   Future<void> _handlePickedFiles() async {
     if (images.isEmpty && video == null) {
-      notify(context, "Chưa chọn hình ảnh hoặc video!", NotifyType.error);
+      notify(context, "Chưa chọn hình ảnh hoặc video!", NotifyType.warning);
       return;
     }
 
@@ -86,53 +69,30 @@ class _MyHomePageState extends State<MyHomePage> {
       isLoading = true;
     });
 
-    // Get the access token
-    final accessToken = await getAccessToken();
-
-    if (accessToken == null) {
-      if (mounted) {
-        notify(context, "Bạn chưa cấp quyền tải file lên Google Drive",
-            NotifyType.warning);
-      }
-
-      isProcessing = false;
-      setState(() {
-        isLoading = false;
-      });
-      return;
-    }
-
     String filePath = '';
 
     if (images.isNotEmpty) {
-      final pdf = pw.Document();
-
-      for (XFile file in images) {
-        //compress the quality of image
-        var compressedImage = await compressImage(await file.readAsBytes());
-        final image = pw.MemoryImage(compressedImage!);
-
-        pdf.addPage(
-          pw.Page(
-            build: (pw.Context context) => pw.Center(child: pw.Image(image)),
-          ),
-        );
-      }
-
-      final DateTime now = DateTime.now();
-      final DateFormat formatter = DateFormat('yyyy-MM-dd_HH-mm-ss_ms');
-      final String filename = formatter.format(now);
-      filePath =
-          '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
-      final file = File(filePath);
-
-      await file.writeAsBytes(await pdf.save());
+      filePath = await makePdfFromImages(images);
     } else {
       filePath = video!.path;
     }
 
     // Upload the PDF file
-    fileUrl = await uploadFileToDrive(accessToken, filePath);
+    try{
+      fileUrl = await uploadFileToDrive(filePath);
+    }
+    catch(ex){
+      if (mounted) {
+        notify(context, ex.toString().replaceAll('Exception: ', ''),
+            NotifyType.error);
+
+        isProcessing = false;
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+    }
 
     if (fileUrl.isEmpty) {
       if (mounted) {

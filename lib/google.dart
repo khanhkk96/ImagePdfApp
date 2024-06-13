@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-
 import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart';
-
 
 final GoogleSignIn _googleSignIn = GoogleSignIn(
   scopes: [
@@ -65,7 +63,14 @@ Future<void> shareFileWithUser(String accessToken, String fileId,
   }
 }
 
-Future<String> uploadFileToDrive(String accessToken, String filePath) async {
+Future<String> uploadFileToDrive(String filePath) async {
+  // Get the access token
+  final accessToken = await getAccessToken();
+
+  if (accessToken == null) {
+    throw Exception('Bạn chưa cấp quyền tải file lên Google Drive');
+  }
+
   final authHeaders = {
     'Authorization': 'Bearer $accessToken',
   };
