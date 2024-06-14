@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -41,14 +42,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<XFile> images = [];
-  XFile? video = null;
-  String fileUrl = '';
+  List<PlatformFile> pickedFiles = [];
+  List<PlatformFile> images = [];
+  List<PlatformFile> videos = [];
+  List<String> fileUrls = [];
+
   bool isProcessing = false;
   bool isLoading = false;
 
   Future<void> _handlePickedFiles() async {
-    if (images.isEmpty && video == null) {
+    fileUrls = [];
+
+    if (images.isEmpty && videos.isEmpty) {
       notify(context, "Chưa chọn hình ảnh hoặc video!", NotifyType.warning);
       return;
     }
@@ -69,19 +74,28 @@ class _MyHomePageState extends State<MyHomePage> {
       isLoading = true;
     });
 
-    String filePath = '';
+    List<String> filePaths = [];
+    String mimeType = 'application/pdf';
 
     if (images.isNotEmpty) {
-      filePath = await makePdfFromImages(images);
+      // filePaths.add(await makePdfFromImages(images));
     } else {
-      filePath = video!.path;
+      for (PlatformFile file in videos) {
+        filePaths.add(file.xFile.path);
+      }
+      mimeType = 'video/mp4';
     }
 
     // Upload the PDF file
-    try{
-      fileUrl = await uploadFileToDrive(filePath);
-    }
-    catch(ex){
+    try {
+      // Get the access token
+      final accessToken = await getAccessToken();
+
+      for (String filePath in filePaths) {
+        String fileUrl = await uploadFileToDrive(accessToken, filePath, mimeType: mimeType);
+        fileUrls.add(fileUrl);
+      }
+    } catch (ex) {
       if (mounted) {
         notify(context, ex.toString().replaceAll('Exception: ', ''),
             NotifyType.error);
@@ -93,17 +107,22 @@ class _MyHomePageState extends State<MyHomePage> {
         return;
       }
     }
+    finally{
+      await googleAccountSignOut();
 
-    if (fileUrl.isEmpty) {
+      if (videos.isNotEmpty){
+        await clearTempFiles(pickedFiles);
+      }
+    }
+
+    if (fileUrls.isEmpty) {
       if (mounted) {
         notify(context, "Tải file lên Google Drive không thành công.",
             NotifyType.error);
       }
     } else {
       if (mounted) {
-        notify(
-            context,
-            "Đã tải file pdf lên Google Drive ở chế độ công khai.",
+        notify(context, "Đã tải file pdf lên Google Drive ở chế độ công khai.",
             NotifyType.success);
       }
     }
@@ -115,9 +134,48 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _pickImages() async {
-    final ImagePicker picker = ImagePicker();
-    images = await picker.pickMultiImage();
-    setState(() {});
+    if (videos.isNotEmpty) {
+      await clearTempFiles(pickedFiles);
+      videos = [];
+    }
+
+    final result = await FilePicker.platform
+        .pickFiles(type: FileType.image, allowMultiple: true);
+    images = [];
+
+    if (result != null) {
+      images = result.files;
+      pickedFiles = images;
+      setState(() {});
+    }
+
+    // final ImagePicker picker = ImagePicker();
+    // images = await picker.pickMultipleMedia();
+    // setState(() {});
+  }
+
+  Future<void> _pickVideo() async {
+    if (videos.isNotEmpty){
+      await clearTempFiles(pickedFiles);
+      images = [];
+    }
+
+    final result = await FilePicker.platform
+        .pickFiles(type: FileType.video, allowMultiple: true);
+    videos = [];
+    pickedFiles.clear();
+
+    if (result != null) {
+      videos = result.files;
+      for (var vi in videos) {
+        PlatformFile? thumbnailImage = await generateThumbnail(vi.path!);
+        if (thumbnailImage != null) {
+          pickedFiles.add(thumbnailImage);
+        }
+      }
+
+      setState(() {});
+    }
   }
 
   @override
@@ -139,13 +197,13 @@ class _MyHomePageState extends State<MyHomePage> {
                         top: 16, left: 16, right: 16, bottom: 16),
                     // Set top and left margins
                     child: GridView.builder(
-                        itemCount: images.length,
+                        itemCount: pickedFiles.length,
                         itemBuilder: (ctx, index) {
                           return SizedBox(
                             height: MediaQuery.of(context).size.height,
                             width: MediaQuery.of(context).size.width,
                             child: Image.file(
-                              File(images[index].path),
+                              File(pickedFiles[index].path!),
                               fit: BoxFit.contain,
                             ),
                           );
@@ -166,48 +224,72 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   Flexible(
-                    child: GestureDetector(
-                      onTap: () async {
-                        Clipboard.setData(ClipboardData(text: fileUrl));
-                        Fluttertoast.showToast(
-                            msg: "Đã sao chép vào bộ nhớ",
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.BOTTOM,
-                            timeInSecForIosWeb: 2,
-                            backgroundColor: Colors.white,
-                            textColor: Colors.cyan,
-                            fontSize: 16.0);
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(
-                            top: 8, left: 4, right: 16, bottom: 8),
-                        child: Text(
-                          fileUrl,
-                          overflow: TextOverflow.clip,
-                          style: const TextStyle(
-                              decoration: TextDecoration.underline,
-                              color: Colors.blue),
-                        ),
-                      ),
-                    ),
+                    child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: fileUrls.length,
+                        itemBuilder: (ctx, idx) {
+                          return GestureDetector(
+                            onTap: () async {
+                              Clipboard.setData(
+                                  ClipboardData(text: fileUrls[idx]));
+                              Fluttertoast.showToast(
+                                  msg: "Đã sao chép vào bộ nhớ",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  timeInSecForIosWeb: 2,
+                                  backgroundColor: Colors.white,
+                                  textColor: Colors.cyan,
+                                  fontSize: 16.0);
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(
+                                  top: 8, left: 4, right: 16, bottom: 8),
+                              child: Text(
+                                fileUrls[idx],
+                                overflow: TextOverflow.clip,
+                                style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue),
+                              ),
+                            ),
+                          );
+                        }),
                   ),
                 ],
               ),
               Flexible(
                   flex: 1,
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 16.0),
-                    // Set top and left margins
-                    child: OutlinedButton(
-                      onPressed: _pickImages,
-                      style: ButtonStyle(
-                        side: WidgetStateProperty.all(const BorderSide(
-                          color: Colors.lightBlueAccent,
-                          width: 2.0,
-                        )),
+                  child: Row(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(left: 16.0),
+                        // Set top and left margins
+                        child: OutlinedButton(
+                          onPressed: _pickImages,
+                          style: ButtonStyle(
+                            side: WidgetStateProperty.all(const BorderSide(
+                              color: Colors.lightBlueAccent,
+                              width: 2.0,
+                            )),
+                          ),
+                          child: const Text("Chọn hình ảnh"),
+                        ),
                       ),
-                      child: const Text("Chọn hình ảnh"),
-                    ),
+                      Container(
+                        margin: const EdgeInsets.only(left: 16.0),
+                        // Set top and left margins
+                        child: OutlinedButton(
+                          onPressed: _pickVideo,
+                          style: ButtonStyle(
+                            side: WidgetStateProperty.all(const BorderSide(
+                              color: Colors.redAccent,
+                              width: 2.0,
+                            )),
+                          ),
+                          child: const Text("Chọn video"),
+                        ),
+                      ),
+                    ],
                   ))
             ],
           ),

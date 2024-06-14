@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:make_pdf/utils.dart';
 import 'package:path/path.dart';
 
 final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -16,16 +17,20 @@ final GoogleSignIn _googleSignIn = GoogleSignIn(
 
 Future<String?> getAccessToken() async {
   try {
-    await _googleSignIn.signOut();
     final GoogleSignInAccount? googleSignInAccount =
-    await _googleSignIn.signIn();
+        await _googleSignIn.signIn();
     final GoogleSignInAuthentication googleSignInAuthentication =
-    await googleSignInAccount!.authentication;
+        await googleSignInAccount!.authentication;
     return googleSignInAuthentication.accessToken;
   } catch (error) {
     debugPrint('Error signing in: $error');
+    await _googleSignIn.signOut();
     return null;
   }
+}
+
+Future<void> googleAccountSignOut() async {
+  await _googleSignIn.signOut();
 }
 
 Future<void> shareFileWithUser(String accessToken, String fileId,
@@ -63,9 +68,9 @@ Future<void> shareFileWithUser(String accessToken, String fileId,
   }
 }
 
-Future<String> uploadFileToDrive(String filePath) async {
+Future<String> uploadFileToDrive(String? accessToken, String filePath, {String mimeType = 'application/pdf'}) async {
   // Get the access token
-  final accessToken = await getAccessToken();
+  // final accessToken = await getAccessToken();
 
   if (accessToken == null) {
     throw Exception('Bạn chưa cấp quyền tải file lên Google Drive');
@@ -78,12 +83,13 @@ Future<String> uploadFileToDrive(String filePath) async {
   final client = http.Client();
 
   File file = File(filePath);
-  String filename = basename(file.path);
+  String subFileName = randomString();
+  String filename = '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
 
   // Create a file metadata object
   final fileMetadata = drive.File()
     ..name = filename // Set the desired filename
-    ..mimeType = 'application/pdf';
+    ..mimeType = mimeType;
 
   // Create a multipart request
   final request = http.MultipartRequest(
