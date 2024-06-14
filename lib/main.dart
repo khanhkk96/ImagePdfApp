@@ -42,9 +42,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<PlatformFile> pickedFiles = [];
-  List<PlatformFile> images = [];
-  List<PlatformFile> videos = [];
+  List<XFile> pickedFiles = [];
+  List<XFile> images = [];
+  List<XFile> videos = [];
   List<String> fileUrls = [];
 
   bool isProcessing = false;
@@ -78,10 +78,10 @@ class _MyHomePageState extends State<MyHomePage> {
     String mimeType = 'application/pdf';
 
     if (images.isNotEmpty) {
-      // filePaths.add(await makePdfFromImages(images));
+      filePaths.add(await makePdfFromImages(images));
     } else {
-      for (PlatformFile file in videos) {
-        filePaths.add(file.xFile.path);
+      for (var file in videos) {
+        filePaths.add(file.path);
       }
       mimeType = 'video/mp4';
     }
@@ -92,7 +92,8 @@ class _MyHomePageState extends State<MyHomePage> {
       final accessToken = await getAccessToken();
 
       for (String filePath in filePaths) {
-        String fileUrl = await uploadFileToDrive(accessToken, filePath, mimeType: mimeType);
+        String fileUrl =
+            await uploadFileToDrive(accessToken, filePath, mimeType: mimeType);
         fileUrls.add(fileUrl);
       }
     } catch (ex) {
@@ -106,11 +107,10 @@ class _MyHomePageState extends State<MyHomePage> {
         });
         return;
       }
-    }
-    finally{
+    } finally {
       await googleAccountSignOut();
 
-      if (videos.isNotEmpty){
+      if (videos.isNotEmpty) {
         await clearTempFiles(pickedFiles);
       }
     }
@@ -139,43 +139,55 @@ class _MyHomePageState extends State<MyHomePage> {
       videos = [];
     }
 
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.image, allowMultiple: true);
     images = [];
+    // final result = await FilePicker.platform
+    //     .pickFiles(type: FileType.image, allowMultiple: true);
+    //
+    // if (result != null) {
+    //   images = result.files;
+    //   pickedFiles = images;
+    //   setState(() {});
+    // }
 
-    if (result != null) {
-      images = result.files;
-      pickedFiles = images;
-      setState(() {});
-    }
-
-    // final ImagePicker picker = ImagePicker();
-    // images = await picker.pickMultipleMedia();
-    // setState(() {});
+    final ImagePicker picker = ImagePicker();
+    images = await picker.pickMultiImage();
+    pickedFiles = images;
+    setState(() {});
   }
 
   Future<void> _pickVideo() async {
-    if (videos.isNotEmpty){
+    if (videos.isNotEmpty) {
       await clearTempFiles(pickedFiles);
       images = [];
     }
 
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.video, allowMultiple: true);
-    videos = [];
+    // final result = await FilePicker.platform
+    //     .pickFiles(type: FileType.video, allowMultiple: true);
+    // videos = [];
+    // pickedFiles.clear();
+    //
+    // if (result != null) {
+    //   videos = result.files;
+    //   for (var vi in videos) {
+    //     PlatformFile? thumbnailImage = await generateThumbnail(vi.path!);
+    //     if (thumbnailImage != null) {
+    //       pickedFiles.add(thumbnailImage);
+    //     }
+    //   }
+    //
+    //   setState(() {});
+    // }
+
+    final ImagePicker picker = ImagePicker();
+    videos = await picker.pickMultipleMedia();
     pickedFiles.clear();
-
-    if (result != null) {
-      videos = result.files;
-      for (var vi in videos) {
-        PlatformFile? thumbnailImage = await generateThumbnail(vi.path!);
-        if (thumbnailImage != null) {
-          pickedFiles.add(thumbnailImage);
-        }
+    for (var vi in videos) {
+      var thumbnailImage = await generateThumbnail(vi.path);
+      if (thumbnailImage != null) {
+        pickedFiles.add(thumbnailImage);
       }
-
-      setState(() {});
     }
+    setState(() {});
   }
 
   @override

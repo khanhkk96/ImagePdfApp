@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:video_compress/video_compress.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as path;
 
@@ -58,14 +59,14 @@ Future<Uint8List?> compressImage(Uint8List imageData) async {
   return result;
 }
 
-Future<String> makePdfFromImages(List<PlatformFile> images) async {
+Future<String> makePdfFromImages(List<XFile> images) async {
   if (images.isEmpty) {
     return '';
   }
 
   final pdf = pw.Document();
 
-  for (PlatformFile img in images) {
+  for (var img in images) {
     File file = File(img.path!);
     //compress the quality of image
     var compressedImage = await compressImage(await file.readAsBytes());
@@ -90,7 +91,7 @@ Future<String> makePdfFromImages(List<PlatformFile> images) async {
   return filePath;
 }
 
-Future<PlatformFile?> generateThumbnail(String videoPath) async {
+Future<XFile?> generateThumbnail(String videoPath) async {
   debugPrint('gen thumbnail image from: $videoPath');
   final thumbnailImageData = await VideoThumbnail.thumbnailData(
     video: videoPath,
@@ -114,19 +115,18 @@ Future<PlatformFile?> generateThumbnail(String videoPath) async {
     final file = File(filePath);
     await file.writeAsBytes(thumbnailImageData);
 
-    return PlatformFile(
-        name: filename, size: file.lengthSync(), path: filePath);
+    return XFile.fromData(file.readAsBytesSync(),
+        length: file.lengthSync(), path: filePath);
   }
 
   return null;
 }
 
-
-Future<void> clearTempFiles(List<PlatformFile> files) async {
-  if(files.isNotEmpty){
-    for(var file in files){
-      File fileData = File(file.path!);
-      if(fileData.existsSync()){
+Future<void> clearTempFiles(List<XFile> files) async {
+  if (files.isNotEmpty) {
+    for (var file in files) {
+      File fileData = File(file.path);
+      if (fileData.existsSync()) {
         await fileData.delete();
       }
     }
@@ -141,4 +141,20 @@ String randomString({int length = 6}) {
       length, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
 
   return randomString;
+}
+
+Future<XFile?> compressVideo(String videoPath) async {
+  MediaInfo? compressedVideoInfo = await VideoCompress.compressVideo(
+    videoPath,
+    quality: VideoQuality.MediumQuality, // Adjust quality as needed
+    deleteOrigin:
+        false, // Set to true to delete the original video after compression
+  );
+
+  if (compressedVideoInfo != null) {
+    return XFile.fromData(compressedVideoInfo.file!.readAsBytesSync(),
+        length: compressedVideoInfo.filesize, path: compressedVideoInfo.path);
+  }
+
+  return null;
 }

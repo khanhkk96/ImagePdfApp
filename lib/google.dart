@@ -68,7 +68,8 @@ Future<void> shareFileWithUser(String accessToken, String fileId,
   }
 }
 
-Future<String> uploadFileToDrive(String? accessToken, String filePath, {String mimeType = 'application/pdf'}) async {
+Future<String> uploadFileToDrive(String? accessToken, String filePath,
+    {String mimeType = 'application/pdf'}) async {
   // Get the access token
   // final accessToken = await getAccessToken();
 
@@ -84,7 +85,8 @@ Future<String> uploadFileToDrive(String? accessToken, String filePath, {String m
 
   File file = File(filePath);
   String subFileName = randomString();
-  String filename = '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
+  String filename =
+      '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
 
   // Create a file metadata object
   final fileMetadata = drive.File()
@@ -122,7 +124,7 @@ Future<String> uploadFileToDrive(String? accessToken, String filePath, {String m
 
   // Handle the response
   if (response.statusCode == 200) {
-    debugPrint('PDF uploaded successfully!');
+    debugPrint('A file uploaded successfully!');
     final responseBody = await response.stream.bytesToString();
     final jsonResponse = jsonDecode(responseBody);
     final fileId = jsonResponse['id'] as String;
@@ -133,7 +135,7 @@ Future<String> uploadFileToDrive(String? accessToken, String filePath, {String m
     await shareFileWithUser(accessToken, fileId);
   } else {
     await file.delete();
-    debugPrint('Error uploading PDF: ${response.reasonPhrase}');
+    debugPrint('Error uploading file: ${response.reasonPhrase}');
   }
 
   client.close();
