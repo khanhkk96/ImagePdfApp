@@ -55,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> fileUrls = [];
   late String filename = '';
   final _textController = TextEditingController();
+  final _focusNode = FocusNode();
 
   bool isProcessing = false;
   bool isLoading = false;
@@ -62,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _textController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -101,13 +103,23 @@ class _MyHomePageState extends State<MyHomePage> {
       mimeType = 'video/mp4';
     }
 
+    // List<XFile> renderVideos = [];
+
     // Upload the PDF file
     try {
       // Get the access token
       final accessToken = await getAccessToken();
-      debugPrint('filename inputed: ${filename}');
 
       for (String filePath in filePaths) {
+        //reduce video quality
+        // if(mimeType == 'video/mp4'){
+        //   XFile? compressedVideo = await compressVideo(filePath);
+        //   if(compressedVideo != null){
+        //     filePath = compressedVideo.path;
+        //     renderVideos.add(compressedVideo);
+        //   }
+        // }
+
         String fileUrl = await uploadFileToDrive(
             accessToken, filePath, filename,
             mimeType: mimeType);
@@ -130,6 +142,11 @@ class _MyHomePageState extends State<MyHomePage> {
       if (videos.isNotEmpty) {
         await clearTempFiles(pickedFiles);
       }
+
+      // //delete render lower quality video
+      // if(renderVideos.isNotEmpty){
+      //   await clearTempFiles(renderVideos);
+      // }
     }
 
     if (fileUrls.isEmpty) {
@@ -145,6 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       //clear textField
       _textController.clear();
+      _focusNode.unfocus();
       setState(() {
         filename = '';
       });
@@ -318,6 +336,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             width: MediaQuery.of(context).size.width / 2,
                             child: TextField(
                               controller: _textController,
+                              focusNode: _focusNode,
                               decoration: const InputDecoration(
                                   hintText: 'Nhập tên file',
                                   hintStyle: TextStyle(color: Colors.grey),
