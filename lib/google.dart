@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:intl/intl.dart';
 import 'package:make_pdf/utils.dart';
 import 'package:path/path.dart';
 
@@ -68,7 +69,8 @@ Future<void> shareFileWithUser(String accessToken, String fileId,
   }
 }
 
-Future<String> uploadFileToDrive(String? accessToken, String filePath,
+Future<String> uploadFileToDrive(
+    String? accessToken, String filePath, String uploadFilename,
     {String mimeType = 'application/pdf'}) async {
   // Get the access token
   // final accessToken = await getAccessToken();
@@ -85,8 +87,19 @@ Future<String> uploadFileToDrive(String? accessToken, String filePath,
 
   File file = File(filePath);
   String subFileName = randomString();
-  String filename =
-      '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
+  String filename = '';
+
+  if(uploadFilename.isEmpty){
+    filename =
+    '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
+  }
+  else{
+    final DateTime now = DateTime.now();
+    final DateFormat formatter = DateFormat('yyyyMMdd_HHmm');
+    final String timeString = formatter.format(now);
+    filename =
+    '${uploadFilename}_${timeString}_$subFileName${extension(file.path)}';
+  }
 
   // Create a file metadata object
   final fileMetadata = drive.File()

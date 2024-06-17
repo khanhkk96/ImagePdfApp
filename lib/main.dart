@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:make_pdf/utils.dart';
+import 'package:path/path.dart' as path;
 
 import 'google.dart';
 
@@ -42,13 +42,28 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  //display picked files
   List<XFile> pickedFiles = [];
+
+  //picked images
   List<XFile> images = [];
+
+  //picked videos
   List<XFile> videos = [];
+
+  //uploaded file urls
   List<String> fileUrls = [];
+  late String filename = '';
+  final _textController = TextEditingController();
 
   bool isProcessing = false;
   bool isLoading = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handlePickedFiles() async {
     fileUrls = [];
@@ -90,10 +105,12 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       // Get the access token
       final accessToken = await getAccessToken();
+      debugPrint('filename inputed: ${filename}');
 
       for (String filePath in filePaths) {
-        String fileUrl =
-            await uploadFileToDrive(accessToken, filePath, mimeType: mimeType);
+        String fileUrl = await uploadFileToDrive(
+            accessToken, filePath, filename,
+            mimeType: mimeType);
         fileUrls.add(fileUrl);
       }
     } catch (ex) {
@@ -125,6 +142,12 @@ class _MyHomePageState extends State<MyHomePage> {
         notify(context, "Đã tải file pdf lên Google Drive ở chế độ công khai.",
             NotifyType.success);
       }
+
+      //clear textField
+      _textController.clear();
+      setState(() {
+        filename = '';
+      });
     }
 
     isProcessing = false;
@@ -140,14 +163,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     images = [];
-    // final result = await FilePicker.platform
-    //     .pickFiles(type: FileType.image, allowMultiple: true);
-    //
-    // if (result != null) {
-    //   images = result.files;
-    //   pickedFiles = images;
-    //   setState(() {});
-    // }
 
     final ImagePicker picker = ImagePicker();
     images = await picker.pickMultiImage();
@@ -155,34 +170,27 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
-  Future<void> _pickVideo() async {
+  Future<void> _pickVideos() async {
     if (videos.isNotEmpty) {
       await clearTempFiles(pickedFiles);
       images = [];
     }
 
-    // final result = await FilePicker.platform
-    //     .pickFiles(type: FileType.video, allowMultiple: true);
-    // videos = [];
-    // pickedFiles.clear();
-    //
-    // if (result != null) {
-    //   videos = result.files;
-    //   for (var vi in videos) {
-    //     PlatformFile? thumbnailImage = await generateThumbnail(vi.path!);
-    //     if (thumbnailImage != null) {
-    //       pickedFiles.add(thumbnailImage);
-    //     }
-    //   }
-    //
-    //   setState(() {});
-    // }
-
     final ImagePicker picker = ImagePicker();
     videos = await picker.pickMultipleMedia();
     pickedFiles.clear();
+
     for (var vi in videos) {
+      if (path.extension(vi.path) != '.mp4') {
+        videos = [];
+
+        if (mounted) {
+          notify(context, "Chỉ chọn video cần tải lên.", NotifyType.warning);
+        }
+        break;
+      }
       var thumbnailImage = await generateThumbnail(vi.path);
+
       if (thumbnailImage != null) {
         pickedFiles.add(thumbnailImage);
       }
@@ -205,8 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                   flex: 10,
                   child: Container(
-                    margin: const EdgeInsets.only(
-                        top: 16, left: 16, right: 16, bottom: 16),
+                    margin: const EdgeInsets.all(8),
                     // Set top and left margins
                     child: GridView.builder(
                         itemCount: pickedFiles.length,
@@ -215,7 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             height: MediaQuery.of(context).size.height,
                             width: MediaQuery.of(context).size.width,
                             child: Image.file(
-                              File(pickedFiles[index].path!),
+                              File(pickedFiles[index].path),
                               fit: BoxFit.contain,
                             ),
                           );
@@ -230,7 +237,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   Container(
                     margin: const EdgeInsets.only(
-                        top: 8, left: 16, right: 4, bottom: 8),
+                        top: 8, left: 8, right: 0, bottom: 8),
                     child: const Text(
                       "File URL: ",
                     ),
@@ -255,10 +262,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             },
                             child: Container(
                               margin: const EdgeInsets.only(
-                                  top: 8, left: 4, right: 16, bottom: 8),
+                                  top: 4, left: 4, right: 12, bottom: 4),
                               child: Text(
-                                fileUrls[idx],
-                                overflow: TextOverflow.clip,
+                                '${idx + 1}. ${fileUrls[idx]}',
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                     decoration: TextDecoration.underline,
                                     color: Colors.blue),
@@ -274,33 +281,57 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Row(
                     children: [
                       Container(
-                        margin: const EdgeInsets.only(left: 16.0),
+                        margin: const EdgeInsets.only(left: 4.0),
                         // Set top and left margins
-                        child: OutlinedButton(
-                          onPressed: _pickImages,
-                          style: ButtonStyle(
-                            side: WidgetStateProperty.all(const BorderSide(
-                              color: Colors.lightBlueAccent,
+                        child: IconButton(
+                            icon: const Icon(
+                              Icons.image,
+                              color: Colors.lightGreen,
+                            ),
+                            onPressed: _pickImages,
+                            style: ElevatedButton.styleFrom(
+                                side: const BorderSide(
+                              color: Colors.greenAccent,
                               width: 2.0,
-                            )),
-                          ),
-                          child: const Text("Chọn hình ảnh"),
-                        ),
+                            ))),
                       ),
                       Container(
-                        margin: const EdgeInsets.only(left: 16.0),
+                        margin: const EdgeInsets.only(left: 0),
                         // Set top and left margins
-                        child: OutlinedButton(
-                          onPressed: _pickVideo,
-                          style: ButtonStyle(
-                            side: WidgetStateProperty.all(const BorderSide(
+                        child: IconButton(
+                            icon: const Icon(
+                              Icons.video_camera_back,
                               color: Colors.redAccent,
-                              width: 2.0,
-                            )),
-                          ),
-                          child: const Text("Chọn video"),
-                        ),
+                            ),
+                            onPressed: _pickVideos,
+                            style: ElevatedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Colors.red,
+                                  width: 2.0,
+                                ),
+                                maximumSize: const Size(60, 50))),
                       ),
+                      Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          child: SizedBox(
+                            height: MediaQuery.of(context).size.height,
+                            width: MediaQuery.of(context).size.width / 2,
+                            child: TextField(
+                              controller: _textController,
+                              decoration: const InputDecoration(
+                                  hintText: 'Nhập tên file',
+                                  hintStyle: TextStyle(color: Colors.grey),
+                                  contentPadding: EdgeInsets.only(top: 20)),
+                              autofocus: false,
+                              onTapOutside: (e) {
+                                FocusScope.of(context).unfocus();
+                              },
+                              onChanged: (text) {
+                                filename = text;
+                                setState(() {});
+                              },
+                            ),
+                          ))
                     ],
                   ))
             ],
@@ -311,7 +342,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: !isProcessing ? _handlePickedFiles : null,
         tooltip: 'Tạo file pdf',
-        child: const Icon(Icons.upload_file),
+        child: const Icon(Icons.upload),
       ),
     );
   }

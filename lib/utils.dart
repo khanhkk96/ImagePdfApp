@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -67,7 +66,7 @@ Future<String> makePdfFromImages(List<XFile> images) async {
   final pdf = pw.Document();
 
   for (var img in images) {
-    File file = File(img.path!);
+    File file = File(img.path);
     //compress the quality of image
     var compressedImage = await compressImage(await file.readAsBytes());
     final image = pw.MemoryImage(compressedImage!);
@@ -80,7 +79,7 @@ Future<String> makePdfFromImages(List<XFile> images) async {
   }
 
   final DateTime now = DateTime.now();
-  final DateFormat formatter = DateFormat('yyyy-MM-dd_HH-mm-ss_ms');
+  final DateFormat formatter = DateFormat('yyyyMMdd_HHmmss_ms');
   final String filename = formatter.format(now);
   String filePath =
       '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
