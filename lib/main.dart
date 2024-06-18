@@ -52,12 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<XFile> videos = [];
 
   //uploaded file urls
-  List<String> fileUrls = [
-    'https://drive.google.com/file/d/1VomIOyXx2w056kRZnfxjw2aOL1m4ArU6/view',
-    'https://drive.google.com/file/d/1VomIOyXx2w056kRZnfxjw2aOL1m4ArU6/view',
-    'https://drive.google.com/file/d/1VomIOyXx2w056kRZnfxjw2aOL1m4ArU6/view',
-    'https://drive.google.com/file/d/1VomIOyXx2w056kRZnfxjw2aOL1m4ArU6/view'
-  ];
+  List<String> fileUrls = [];
   late String filename = '';
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
@@ -231,7 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         toolbarHeight: 40,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -243,7 +238,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                  flex: 10,
+                  flex: 11,
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     // Set top and left margins
@@ -312,65 +307,62 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
               Flexible(
-                  flex: 1,
+                  // flex: 1,
                   child: Row(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        // width: 40,
-                        // Set top and left margins
-                        child: SizedBox(
-                          height: 40,
-                          width: 40,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.image,
-                              color: Colors.lightGreen,
-                            ),
-                            onPressed: _pickImages,
-                          ),
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(left: 8, top: 8),
+                    // Set top and left margins
+                    child: SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.image,
+                          color: Colors.lightGreen,
                         ),
+                        onPressed: _pickImages,
                       ),
-                      Container(
-                        margin: const EdgeInsets.all(0),
-                        // width: 40,
-                        // Set top and left margins
-                        child: SizedBox(
-                          height: 40,
-                          width: 40,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.video_camera_back,
-                              color: Colors.redAccent,
-                            ),
-                            onPressed: _pickVideos,
-                          ),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    // Set top and left margins
+                    child: SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.video_camera_back,
+                          color: Colors.redAccent,
                         ),
+                        onPressed: _pickVideos,
                       ),
-                      Container(
-                          margin: const EdgeInsets.only(left: 8),
-                          child: SizedBox(
-                            height: MediaQuery.of(context).size.height,
-                            width: MediaQuery.of(context).size.width / 1.9,
-                            child: TextField(
-                              controller: _textController,
-                              focusNode: _focusNode,
-                              decoration: const InputDecoration(
-                                  hintText: 'Nhập tên file',
-                                  hintStyle: TextStyle(color: Colors.grey),
-                                  contentPadding: EdgeInsets.only(top: 10)),
-                              autofocus: false,
-                              onTapOutside: (e) {
-                                FocusScope.of(context).unfocus();
-                              },
-                              onChanged: (text) {
-                                filename = text;
-                                setState(() {});
-                              },
-                            ),
-                          ))
-                    ],
-                  ))
+                    ),
+                  ),
+                  Container(
+                      margin: const EdgeInsets.only(left: 8, bottom: 4),
+                      height: 40,
+                      width: MediaQuery.of(context).size.width / 1.9,
+                      child: TextField(
+                        controller: _textController,
+                        focusNode: _focusNode,
+                        decoration: const InputDecoration(
+                          hintText: 'Nhập tên file',
+                          hintStyle: TextStyle(color: Colors.grey),
+                          contentPadding: EdgeInsets.only(bottom: 4),
+                        ),
+                        autofocus: false,
+                        onTapOutside: (e) {
+                          FocusScope.of(context).unfocus();
+                        },
+                        onChanged: (text) {
+                          filename = text;
+                          setState(() {});
+                        },
+                      ))
+                ],
+              ))
             ],
           ),
           if (isLoading) const Center(child: CircularProgressIndicator())
