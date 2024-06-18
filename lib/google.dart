@@ -76,7 +76,8 @@ Future<String> uploadFileToDrive(
   // final accessToken = await getAccessToken();
 
   if (accessToken == null) {
-    throw Exception('[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
+    throw Exception(
+        '[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
   }
 
   final authHeaders = {
@@ -89,16 +90,15 @@ Future<String> uploadFileToDrive(
   String subFileName = randomString();
   String filename = '';
 
-  if(uploadFilename.isEmpty){
+  if (uploadFilename.isEmpty) {
     filename =
-    '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
-  }
-  else{
+        '${basenameWithoutExtension(file.path)}_$subFileName${extension(file.path)}';
+  } else {
     final DateTime now = DateTime.now();
     final DateFormat formatter = DateFormat('yyyyMMdd_HHmm');
     final String timeString = formatter.format(now);
     filename =
-    '${uploadFilename}_${timeString}_$subFileName${extension(file.path)}';
+        '${uploadFilename}_${timeString}_$subFileName${extension(file.path)}';
   }
 
   // Create a file metadata object
@@ -137,7 +137,8 @@ Future<String> uploadFileToDrive(
 
   // Handle the response
   if (response.statusCode == 200) {
-    debugPrint('A file - ${basename(file.path)} has been uploaded successfully!');
+    debugPrint(
+        'A file - ${basename(file.path)} has been uploaded successfully!');
     final responseBody = await response.stream.bytesToString();
     final jsonResponse = jsonDecode(responseBody);
     final fileId = jsonResponse['id'] as String;
