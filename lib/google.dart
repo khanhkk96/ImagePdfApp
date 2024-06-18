@@ -76,7 +76,7 @@ Future<String> uploadFileToDrive(
   // final accessToken = await getAccessToken();
 
   if (accessToken == null) {
-    throw Exception('Bạn chưa cấp quyền tải file lên Google Drive');
+    throw Exception('[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
   }
 
   final authHeaders = {
@@ -137,7 +137,7 @@ Future<String> uploadFileToDrive(
 
   // Handle the response
   if (response.statusCode == 200) {
-    debugPrint('A file uploaded successfully!');
+    debugPrint('A file - ${basename(file.path)} has been uploaded successfully!');
     final responseBody = await response.stream.bytesToString();
     final jsonResponse = jsonDecode(responseBody);
     final fileId = jsonResponse['id'] as String;

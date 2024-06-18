@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: MyHomePage(title: 'Submit homework'),
+        body: MyHomePage(title: 'Homework'),
       ),
     );
   }
@@ -127,8 +127,16 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     } catch (ex) {
       if (mounted) {
-        notify(context, ex.toString().replaceAll('Exception: ', ''),
-            NotifyType.error);
+        debugPrint(ex.toString());
+        String message = ex.toString().replaceAll('Exception: ', '');
+
+        if (message.contains('[KKException]')) {
+          notify(context, message.replaceAll('[KKException]', ''),
+              NotifyType.error);
+        } else {
+          notify(context, 'Kiểm tra kết nối mạng và vui lòng thử lại...',
+              NotifyType.error);
+        }
 
         isProcessing = false;
         setState(() {
@@ -177,10 +185,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _pickImages() async {
     if (videos.isNotEmpty) {
       await clearTempFiles(pickedFiles);
-      videos = [];
     }
 
-    images = [];
+    videos = [];
 
     final ImagePicker picker = ImagePicker();
     images = await picker.pickMultiImage();
@@ -189,9 +196,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _pickVideos() async {
+    images = [];
     if (videos.isNotEmpty) {
       await clearTempFiles(pickedFiles);
-      images = [];
     }
 
     final ImagePicker picker = ImagePicker();
@@ -220,6 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 40,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
@@ -229,7 +237,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                  flex: 10,
+                  flex: 12,
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     // Set top and left margins
@@ -254,43 +262,46 @@ class _MyHomePageState extends State<MyHomePage> {
               Row(
                 children: [
                   Container(
+                    height: 70,
                     margin: const EdgeInsets.only(
-                        top: 8, left: 8, right: 0, bottom: 8),
-                    child: const Text(
-                      "File URL: ",
-                    ),
+                        top: 0, left: 8, right: 0, bottom: 0),
+                    alignment: Alignment.bottomLeft,
+                    child: const Text("File URL: "),
                   ),
                   Flexible(
-                    child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: fileUrls.length,
-                        itemBuilder: (ctx, idx) {
-                          return GestureDetector(
-                            onTap: () async {
-                              Clipboard.setData(
-                                  ClipboardData(text: fileUrls[idx]));
-                              Fluttertoast.showToast(
-                                  msg: "Đã sao chép vào bộ nhớ",
-                                  toastLength: Toast.LENGTH_SHORT,
-                                  gravity: ToastGravity.BOTTOM,
-                                  timeInSecForIosWeb: 2,
-                                  backgroundColor: Colors.white,
-                                  textColor: Colors.cyan,
-                                  fontSize: 16.0);
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(
-                                  top: 4, left: 4, right: 12, bottom: 4),
-                              child: Text(
-                                '${idx + 1}. ${fileUrls[idx]}',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    decoration: TextDecoration.underline,
-                                    color: Colors.blue),
+                    child: SizedBox(
+                      height: 70,
+                      child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: fileUrls.length,
+                          itemBuilder: (ctx, idx) {
+                            return GestureDetector(
+                              onTap: () async {
+                                Clipboard.setData(
+                                    ClipboardData(text: fileUrls[idx]));
+                                Fluttertoast.showToast(
+                                    msg: "Đã sao chép vào bộ nhớ",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.BOTTOM,
+                                    timeInSecForIosWeb: 2,
+                                    backgroundColor: Colors.white,
+                                    textColor: Colors.cyan,
+                                    fontSize: 16.0);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(
+                                    top: 4, left: 4, right: 12, bottom: 4),
+                                child: Text(
+                                  '${idx + 1}. ${fileUrls[idx]}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      color: Colors.blue),
+                                ),
                               ),
-                            ),
-                          );
-                        }),
+                            );
+                          }),
+                    ),
                   ),
                 ],
               ),
@@ -299,41 +310,44 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Row(
                     children: [
                       Container(
-                        margin: const EdgeInsets.only(left: 4.0),
+                        margin: const EdgeInsets.only(left: 8),
+                        width: 40,
                         // Set top and left margins
                         child: IconButton(
-                            icon: const Icon(
-                              Icons.image,
-                              color: Colors.lightGreen,
-                            ),
-                            onPressed: _pickImages,
-                            style: ElevatedButton.styleFrom(
-                                side: const BorderSide(
-                              color: Colors.greenAccent,
-                              width: 2.0,
-                            ))),
+                          icon: const Icon(
+                            Icons.image,
+                            color: Colors.lightGreen,
+                          ),
+                          onPressed: _pickImages,
+                          // style: ElevatedButton.styleFrom(
+                          //     side: const BorderSide(
+                          //   color: Colors.greenAccent,
+                          //   width: 2.0,
+                          // ))
+                        ),
                       ),
                       Container(
-                        margin: const EdgeInsets.only(left: 0),
+                        margin: const EdgeInsets.all(0),
+                        width: 40,
                         // Set top and left margins
                         child: IconButton(
-                            icon: const Icon(
-                              Icons.video_camera_back,
-                              color: Colors.redAccent,
-                            ),
-                            onPressed: _pickVideos,
-                            style: ElevatedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: Colors.red,
-                                  width: 2.0,
-                                ),
-                                maximumSize: const Size(60, 50))),
+                          icon: const Icon(
+                            Icons.video_camera_back,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: _pickVideos,
+                          // style: ElevatedButton.styleFrom(
+                          //     side: const BorderSide(
+                          //       color: Colors.red,
+                          //       width: 2.0,
+                          //     ))
+                        ),
                       ),
                       Container(
                           margin: const EdgeInsets.only(left: 8),
                           child: SizedBox(
                             height: MediaQuery.of(context).size.height,
-                            width: MediaQuery.of(context).size.width / 2,
+                            width: MediaQuery.of(context).size.width/1.9,
                             child: TextField(
                               controller: _textController,
                               focusNode: _focusNode,
@@ -360,8 +374,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: !isProcessing ? _handlePickedFiles : null,
-        tooltip: 'Tạo file pdf',
-        child: const Icon(Icons.upload),
+        tooltip: 'Upload files',
+        child: const Icon(
+          Icons.upload,
+          color: Colors.blueAccent,
+        ),
       ),
     );
   }
