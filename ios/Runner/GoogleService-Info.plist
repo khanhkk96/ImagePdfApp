@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>266315987405-asni3i451d8e150n0aa9j88krul741k4.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.266315987405-asni3i451d8e150n0aa9j88krul741k4</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>266315987405-rbp58te4v1mg5h0ng1ems6ifkgsiadjh.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDUUtaRVHxYIokJnyOSNAjQ_ageTF9bkNM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>266315987405</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.khanhkk.makepdf</string>
+	<key>PROJECT_ID</key>
+	<string>imagepdfapp</string>
+	<key>STORAGE_BUCKET</key>
+	<string>imagepdfapp.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:266315987405:ios:22c5724535b0fb7759ec84</string>
+</dict>
+</plist>
