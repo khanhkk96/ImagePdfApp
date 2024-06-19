@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:video_compress/video_compress.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -81,8 +82,16 @@ Future<String> makePdfFromImages(List<XFile> images) async {
   final DateTime now = DateTime.now();
   final DateFormat formatter = DateFormat('yyyyMMdd_HHmmss_ms');
   final String filename = formatter.format(now);
-  String filePath =
-      '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
+  String filePath = '';
+
+  if (Platform.isAndroid) {
+    filePath =
+        '${Directory('/storage/emulated/0/Download').path}/$filename.pdf';
+  } else {
+    final directory = await getApplicationDocumentsDirectory();
+    filePath = '${directory.path}/$filename.pdf';
+  }
+
   final file = File(filePath);
 
   await file.writeAsBytes(await pdf.save());
@@ -106,10 +115,21 @@ Future<XFile?> generateThumbnail(String videoPath) async {
     final DateTime now = DateTime.now();
     final DateFormat formatter = DateFormat('HHmmssms');
     final String subFileName = formatter.format(now);
-    String filePath =
-        '${Directory('/storage/emulated/0/Download/temp').path}/${filename}_$subFileName.jpg';
-    Directory newDirectory = Directory('/storage/emulated/0/Download/temp');
-    await newDirectory.create(recursive: true);
+    String filePath = '';
+
+    if (Platform.isAndroid) {
+      filePath =
+          '${Directory('/storage/emulated/0/Download/temp').path}/${filename}_$subFileName.jpg';
+
+      Directory newDirectory = Directory('/storage/emulated/0/Download/temp');
+      await newDirectory.create(recursive: true);
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      Directory newDirectory = Directory('${directory.path}/temp');
+      await newDirectory.create(recursive: true);
+
+      filePath = '${directory.path}/temp/${filename}_$subFileName.jpg';
+    }
 
     final file = File(filePath);
     await file.writeAsBytes(thumbnailImageData);
