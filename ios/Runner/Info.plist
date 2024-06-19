@@ -51,11 +51,16 @@
     <string>This app needs access to the Documents directory to store user data.</string>
     <key>NSCameraUsageDescription</key>
     <string>This app needs access to the camera to take photos.</string>
-    <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-    <key>CFBundleURLSchemes</key>
+    <key>CFBundleURLTypes</key>
     <array>
-        <string>com.googleusercontent.apps.266315987405-asni3i451d8e150n0aa9j88krul741k4.apps.googleusercontent.com</string>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.266315987405-asni3i451d8e150n0aa9j88krul741k4.apps.googleusercontent.com</string>
+            </array>
+        </dict>
     </array>
 </dict>
 </plist>
