@@ -106,5 +106,5 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/homework_2.png"
+  image_path: "assets/homework.png"
   remove_alpha_ios: true
