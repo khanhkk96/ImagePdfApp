@@ -117,7 +117,6 @@ Future<String> createNewDrive(String? accessToken, String? folder) async {
     throw Exception(
         '[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
   }
-  debugPrint('folder: $folder');
 
   final authHeaders = {
     'Authorization': 'Bearer $accessToken',

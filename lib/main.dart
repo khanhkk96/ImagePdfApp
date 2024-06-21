@@ -54,13 +54,11 @@ class _MyHomePageState extends State<MyHomePage> {
   //uploaded file urls
   List<String> fileUrls = [];
   late String filename = '';
-  final _textController = TextEditingController();
-  final _focusNode = FocusNode();
-
   late String drive = '';
 
+  // text field controller
+  final _textController = TextEditingController();
   final _driveController = TextEditingController();
-  final _driveFocusNode = FocusNode();
 
   bool isProcessing = false;
   bool isLoading = false;
@@ -68,9 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _textController.dispose();
-    _focusNode.dispose();
     _driveController.dispose();
-    _driveFocusNode.dispose();
     super.dispose();
   }
 
@@ -79,6 +75,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (images.isEmpty && videos.isEmpty) {
       notify(context, "Chưa chọn hình ảnh hoặc video!", NotifyType.warning);
+      if (mounted) {
+        FocusScope.of(context).requestFocus(FocusNode());
+      }
       return;
     }
 
@@ -91,10 +90,13 @@ class _MyHomePageState extends State<MyHomePage> {
           backgroundColor: Colors.white,
           textColor: Colors.orange,
           fontSize: 16.0);
+      if (mounted) {
+        FocusScope.of(context).requestFocus(FocusNode());
+      }
       return;
     }
-    isProcessing = true;
     setState(() {
+      isProcessing = true;
       isLoading = true;
     });
 
@@ -138,10 +140,10 @@ class _MyHomePageState extends State<MyHomePage> {
         fileUrls.add(fileUrl);
       }
     } catch (ex) {
-      if (mounted) {
-        debugPrint(ex.toString());
-        String message = ex.toString().replaceAll('Exception: ', '');
+      debugPrint(ex.toString());
+      String message = ex.toString().replaceAll('Exception: ', '');
 
+      if (mounted) {
         if (message.contains('[KKException]')) {
           notify(context, message.replaceAll('[KKException]', ''),
               NotifyType.error);
@@ -149,18 +151,21 @@ class _MyHomePageState extends State<MyHomePage> {
           notify(context, 'Kiểm tra kết nối mạng và vui lòng thử lại...',
               NotifyType.error);
         }
-
-        isProcessing = false;
-        setState(() {
-          isLoading = false;
-        });
-        return;
       }
+      setState(() {
+        isProcessing = false;
+        isLoading = false;
+      });
+      return;
     } finally {
       await googleAccountSignOut();
 
       if (videos.isNotEmpty) {
         await clearTempFiles(pickedFiles);
+      }
+
+      if (mounted) {
+        FocusScope.of(context).requestFocus(FocusNode());
       }
 
       // //delete render lower quality video
@@ -183,8 +188,6 @@ class _MyHomePageState extends State<MyHomePage> {
       //clear textField
       _textController.clear();
       _driveController.clear();
-      _focusNode.unfocus();
-      _driveFocusNode.unfocus();
 
       if (mounted) {
         notify(context, "Đã tải file pdf lên Google Drive ở chế độ công khai.",
@@ -192,8 +195,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    isProcessing = false;
     setState(() {
+      isProcessing = false;
       isLoading = false;
     });
   }
@@ -315,7 +318,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       width: MediaQuery.of(context).size.width / 1.9,
                       child: TextField(
                         controller: _textController,
-                        focusNode: _focusNode,
                         decoration: const InputDecoration(
                           hintText: 'Nhập tên file',
                           hintStyle: TextStyle(color: Colors.grey),
@@ -326,8 +328,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           FocusScope.of(context).unfocus();
                         },
                         onChanged: (text) {
-                          filename = text;
-                          setState(() {});
+                          setState(() {
+                            filename = text;
+                          });
                         },
                       ))
                 ],
@@ -347,7 +350,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         width: MediaQuery.of(context).size.width / 1.9,
                         child: TextField(
                           controller: _driveController,
-                          focusNode: _driveFocusNode,
                           decoration: const InputDecoration(
                             hintText: 'Nhập thư mục lưu',
                             hintStyle: TextStyle(color: Colors.grey),
@@ -358,8 +360,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             FocusScope.of(context).unfocus();
                           },
                           onChanged: (text) {
-                            drive = text;
-                            setState(() {});
+                            setState(() {
+                              drive = text;
+                            });
                           },
                         )),
                   ),
@@ -424,7 +427,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           Positioned(
-            bottom: 100.0,
+            bottom: 90.0,
             right: 20.0, // Adjust these values to move the FAB
             child: FloatingActionButton(
               onPressed: !isProcessing ? _handlePickedFiles : null,

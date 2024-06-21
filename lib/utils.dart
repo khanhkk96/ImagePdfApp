@@ -28,7 +28,8 @@ void notify(BuildContext context, String message, NotifyType type) {
       context: context,
       builder: (context) {
         return Center(
-          child: Wrap(children: [
+          child: Wrap(
+              children: [
             Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(20),
