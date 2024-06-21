@@ -276,93 +276,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10)),
                   )),
-              Row(
-                children: [
-                  Container(
-                    height: 70,
-                    margin: const EdgeInsets.only(
-                        top: 0, left: 8, right: 0, bottom: 0),
-                    alignment: Alignment.bottomLeft,
-                    child: const Text("File URL: "),
-                  ),
-                  Flexible(
-                    child: Container(
-                      height: 70,
-                      margin: const EdgeInsets.only(left: 8, right: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.blueGrey, // Border color
-                          width: 1.0, // Border width
-                        ),
-                        borderRadius: BorderRadius.circular(
-                            10.0), // Optional: Add rounded corners
-                      ),
-                      child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: fileUrls.length,
-                          itemBuilder: (ctx, idx) {
-                            return GestureDetector(
-                              onTap: () async {
-                                Clipboard.setData(
-                                    ClipboardData(text: fileUrls[idx]));
-                                Fluttertoast.showToast(
-                                    msg: "Đã sao chép vào bộ nhớ",
-                                    toastLength: Toast.LENGTH_SHORT,
-                                    gravity: ToastGravity.BOTTOM,
-                                    timeInSecForIosWeb: 2,
-                                    backgroundColor: Colors.white,
-                                    textColor: Colors.cyan,
-                                    fontSize: 16.0);
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(
-                                    top: 4, left: 4, right: 12, bottom: 4),
-                                child: Text(
-                                  '${idx + 1}. ${fileUrls[idx]}',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      decoration: TextDecoration.underline,
-                                      color: Colors.blue),
-                                ),
-                              ),
-                            );
-                          }),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(
-                        top: 0, left: 8, right: 0, bottom: 0),
-                    child: const Text("Thư mục: "),
-                  ),
-                  Flexible(
-                    child: Container(
-                        height: 40,
-                        margin: const EdgeInsets.only(left: 24, bottom: 8),
-                        width: MediaQuery.of(context).size.width / 1.9,
-                        child: TextField(
-                          controller: _driveController,
-                          focusNode: _driveFocusNode,
-                          decoration: const InputDecoration(
-                            hintText: 'Nhập thư mục',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            contentPadding: EdgeInsets.only(top: 4),
-                          ),
-                          autofocus: false,
-                          onTapOutside: (e) {
-                            FocusScope.of(context).unfocus();
-                          },
-                          onChanged: (text) {
-                            drive = text;
-                            setState(() {});
-                          },
-                        )),
-                  ),
-                ],
-              ),
               Flexible(
                   child: Row(
                 children: [
@@ -418,19 +331,112 @@ class _MyHomePageState extends State<MyHomePage> {
                         },
                       ))
                 ],
-              ))
+              )),
+              Row(
+                children: [
+                  Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(
+                        top: 0, left: 8, right: 0, bottom: 0),
+                    child: const Text("Thư mục: "),
+                  ),
+                  Flexible(
+                    child: Container(
+                        height: 40,
+                        margin: const EdgeInsets.only(left: 8, bottom: 8),
+                        width: MediaQuery.of(context).size.width / 1.9,
+                        child: TextField(
+                          controller: _driveController,
+                          focusNode: _driveFocusNode,
+                          decoration: const InputDecoration(
+                            hintText: 'Nhập thư mục lưu',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            contentPadding: EdgeInsets.only(top: 4),
+                          ),
+                          autofocus: false,
+                          onTapOutside: (e) {
+                            FocusScope.of(context).unfocus();
+                          },
+                          onChanged: (text) {
+                            drive = text;
+                            setState(() {});
+                          },
+                        )),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Container(
+                    height: 70,
+                    width: 80,
+                    margin: const EdgeInsets.only(
+                        top: 0, left: 12, right: 0, bottom: 0),
+                    alignment: Alignment.bottomLeft,
+                    child: const Text("Kết quả: "),
+                  ),
+                  Flexible(
+                    child: Container(
+                      height: 70,
+                      margin: const EdgeInsets.only(left: 4, right: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.blueGrey, // Border color
+                          width: 1.0, // Border width
+                        ),
+                        borderRadius: BorderRadius.circular(
+                            10.0), // Optional: Add rounded corners
+                      ),
+                      child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: fileUrls.length,
+                          itemBuilder: (ctx, idx) {
+                            return GestureDetector(
+                              onTap: () async {
+                                Clipboard.setData(
+                                    ClipboardData(text: fileUrls[idx]));
+                                Fluttertoast.showToast(
+                                    msg: "Đã sao chép vào bộ nhớ",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.BOTTOM,
+                                    timeInSecForIosWeb: 2,
+                                    backgroundColor: Colors.white,
+                                    textColor: Colors.cyan,
+                                    fontSize: 16.0);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(
+                                    top: 4, left: 4, right: 12, bottom: 4),
+                                child: Text(
+                                  '${idx + 1}. ${fileUrls[idx]}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      color: Colors.blue),
+                                ),
+                              ),
+                            );
+                          }),
+                    ),
+                  ),
+                ],
+              ),
             ],
+          ),
+          Positioned(
+            bottom: 100.0,
+            right: 20.0, // Adjust these values to move the FAB
+            child: FloatingActionButton(
+              onPressed: !isProcessing ? _handlePickedFiles : null,
+              tooltip: 'Upload files',
+              child: const Icon(
+                Icons.upload,
+                color: Colors.blueAccent,
+              ),
+            ),
           ),
           if (isLoading) const Center(child: CircularProgressIndicator())
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: !isProcessing ? _handlePickedFiles : null,
-        tooltip: 'Upload files',
-        child: const Icon(
-          Icons.upload,
-          color: Colors.blueAccent,
-        ),
       ),
     );
   }
