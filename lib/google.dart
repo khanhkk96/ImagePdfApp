@@ -127,6 +127,7 @@ Future<String> createNewDrive(String? accessToken, String? folder) async {
   if (folder != null && folder.isNotEmpty) {
     var existedDrive = await getGoogleDriveFileByName(accessToken, folder);
     debugPrint('drive: ${existedDrive?.toJson().toString()}');
+
     if (existedDrive != null && existedDrive.id != null) {
       return existedDrive.id.toString();
     }

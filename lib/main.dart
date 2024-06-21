@@ -41,6 +41,8 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+const String DRIVE = 'drive';
+
 class _MyHomePageState extends State<MyHomePage> {
   //display picked files
   List<XFile> pickedFiles = [];
@@ -58,10 +60,30 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // text field controller
   final _textController = TextEditingController();
+
   final _driveController = TextEditingController();
 
   bool isProcessing = false;
   bool isLoading = false;
+
+  Future<void> _loadData() async {
+    var data = await loadData();
+    debugPrint('data: $data');
+    if (data != null) {
+      setState(() {
+        drive = data[DRIVE];
+        _driveController.text = drive;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _loadData();
+  }
 
   @override
   void dispose() {
@@ -139,6 +161,17 @@ class _MyHomePageState extends State<MyHomePage> {
             mimeType: mimeType);
         fileUrls.add(fileUrl);
       }
+
+      //save drive name in local storage
+      var data = await loadData();
+
+      if (data == null && drive.isNotEmpty) {
+        data = <String, String>{DRIVE: drive};
+        await saveData(data);
+      } else if (data != null && data[DRIVE] != drive) {
+        data[DRIVE] = drive;
+        await saveData(data);
+      }
     } catch (ex) {
       debugPrint(ex.toString());
       String message = ex.toString().replaceAll('Exception: ', '');
@@ -156,6 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
         isProcessing = false;
         isLoading = false;
       });
+
       return;
     } finally {
       await googleAccountSignOut();
@@ -182,12 +216,10 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       setState(() {
         filename = '';
-        drive = '';
       });
 
       //clear textField
       _textController.clear();
-      _driveController.clear();
 
       if (mounted) {
         notify(context, "Đã tải file pdf lên Google Drive ở chế độ công khai.",

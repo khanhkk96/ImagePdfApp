@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -28,8 +29,7 @@ void notify(BuildContext context, String message, NotifyType type) {
       context: context,
       builder: (context) {
         return Center(
-          child: Wrap(
-              children: [
+          child: Wrap(children: [
             Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(20),
@@ -177,4 +177,22 @@ Future<XFile?> compressVideo(String videoPath) async {
   }
 
   return null;
+}
+
+//save data local
+Future<void> saveData(Map<String, dynamic> data) async {
+  final directory = await getApplicationDocumentsDirectory();
+  final file = File('${directory.path}/data.json');
+  await file.writeAsString(jsonEncode(data));
+}
+
+Future<Map<String, dynamic>?> loadData() async {
+  try {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/data.json');
+    final contents = await file.readAsString();
+    return jsonDecode(contents);
+  } catch (e) {
+    return null;
+  }
 }
