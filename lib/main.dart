@@ -57,6 +57,11 @@ class _MyHomePageState extends State<MyHomePage> {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
 
+  late String drive = '';
+
+  final _driveController = TextEditingController();
+  final _driveFocusNode = FocusNode();
+
   bool isProcessing = false;
   bool isLoading = false;
 
@@ -64,6 +69,8 @@ class _MyHomePageState extends State<MyHomePage> {
   void dispose() {
     _textController.dispose();
     _focusNode.dispose();
+    _driveController.dispose();
+    _driveFocusNode.dispose();
     super.dispose();
   }
 
@@ -109,6 +116,11 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       // Get the access token
       final accessToken = await getAccessToken();
+      String? driveId;
+
+      if (drive.isNotEmpty) {
+        driveId = await createNewDrive(accessToken, drive);
+      }
 
       for (String filePath in filePaths) {
         //reduce video quality
@@ -121,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // }
 
         String fileUrl = await uploadFileToDrive(
-            accessToken, filePath, filename,
+            accessToken, filePath, filename, driveId,
             mimeType: mimeType);
         fileUrls.add(fileUrl);
       }
@@ -163,17 +175,21 @@ class _MyHomePageState extends State<MyHomePage> {
             NotifyType.error);
       }
     } else {
+      setState(() {
+        filename = '';
+        drive = '';
+      });
+
+      //clear textField
+      _textController.clear();
+      _driveController.clear();
+      _focusNode.unfocus();
+      _driveFocusNode.unfocus();
+
       if (mounted) {
         notify(context, "Đã tải file pdf lên Google Drive ở chế độ công khai.",
             NotifyType.success);
       }
-
-      //clear textField
-      _textController.clear();
-      _focusNode.unfocus();
-      setState(() {
-        filename = '';
-      });
     }
 
     isProcessing = false;
@@ -238,7 +254,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                  flex: 11,
+                  flex: 10,
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     // Set top and left margins
@@ -270,8 +286,17 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: const Text("File URL: "),
                   ),
                   Flexible(
-                    child: SizedBox(
+                    child: Container(
                       height: 70,
+                      margin: const EdgeInsets.only(left: 8, right: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.blueGrey, // Border color
+                          width: 1.0, // Border width
+                        ),
+                        borderRadius: BorderRadius.circular(
+                            10.0), // Optional: Add rounded corners
+                      ),
                       child: ListView.builder(
                           shrinkWrap: true,
                           itemCount: fileUrls.length,
@@ -306,8 +331,39 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
+              Row(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(
+                        top: 0, left: 8, right: 0, bottom: 0),
+                    child: const Text("Thư mục: "),
+                  ),
+                  Flexible(
+                    child: Container(
+                        height: 40,
+                        margin: const EdgeInsets.only(left: 24, bottom: 8),
+                        width: MediaQuery.of(context).size.width / 1.9,
+                        child: TextField(
+                          controller: _driveController,
+                          focusNode: _driveFocusNode,
+                          decoration: const InputDecoration(
+                            hintText: 'Nhập thư mục',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            contentPadding: EdgeInsets.only(top: 4),
+                          ),
+                          autofocus: false,
+                          onTapOutside: (e) {
+                            FocusScope.of(context).unfocus();
+                          },
+                          onChanged: (text) {
+                            drive = text;
+                            setState(() {});
+                          },
+                        )),
+                  ),
+                ],
+              ),
               Flexible(
-                  // flex: 1,
                   child: Row(
                 children: [
                   Container(

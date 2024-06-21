@@ -16,6 +16,18 @@ final GoogleSignIn _googleSignIn = GoogleSignIn(
   ],
 );
 
+// Helper class to handle authentication headers
+class GoogleAuthClient extends http.BaseClient {
+  final Map<String, String> _headers;
+
+  GoogleAuthClient(this._headers);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    return http.Client().send(request..headers.addAll(_headers));
+  }
+}
+
 Future<String?> getAccessToken() async {
   try {
     final GoogleSignInAccount? googleSignInAccount =
@@ -69,12 +81,115 @@ Future<void> shareFileWithUser(String accessToken, String fileId,
   }
 }
 
-Future<String> uploadFileToDrive(
-    String? accessToken, String filePath, String uploadFilename,
-    {String mimeType = 'application/pdf'}) async {
-  // Get the access token
-  // final accessToken = await getAccessToken();
+Future<drive.File?> getGoogleDriveFileByName(
+    String accessToken, String fileName) async {
+  // Create a client for the Drive API
+  final authHeaders = {'Authorization': 'Bearer $accessToken'};
+  final client = GoogleAuthClient(authHeaders);
 
+  // Build the Drive API service
+  final driveApi = drive.DriveApi(client);
+
+  try {
+    // Search for the file/folder by name
+    final fileList = await driveApi.files.list(
+      q: "name='$fileName'",
+      spaces: 'drive', // Search in "My Drive"
+    );
+
+    // Return the first matching file/folder (if found)
+    debugPrint('fileList: ${fileList.toJson().toString()}');
+    if (fileList.files != null && fileList.files!.isNotEmpty) {
+      return fileList.files!.first;
+    } else {
+      return null;
+    }
+  } catch (e) {
+    debugPrint('Error searching for file/folder: $e');
+    return null;
+  } finally {
+    client.close();
+  }
+}
+
+Future<String> createNewDrive(String? accessToken, String? folder) async {
+  if (accessToken == null) {
+    throw Exception(
+        '[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
+  }
+  debugPrint('folder: $folder');
+
+  final authHeaders = {
+    'Authorization': 'Bearer $accessToken',
+  };
+
+  final client = http.Client();
+
+  if (folder != null && folder.isNotEmpty) {
+    var existedDrive = await getGoogleDriveFileByName(accessToken, folder);
+    debugPrint('drive: ${existedDrive?.toJson().toString()}');
+    if (existedDrive != null && existedDrive.id != null) {
+      return existedDrive.id.toString();
+    }
+  }
+
+  String subFileName = randomString(length: 3);
+  final DateTime now = DateTime.now();
+  final DateFormat formatter = DateFormat('yyyyMMdd');
+  final String dateString = formatter.format(now);
+  String driveName = folder ?? '${dateString}_$subFileName';
+
+  // Create a file metadata object
+  final fileMetadata = drive.File()
+    ..name = driveName // Set the desired filename
+    ..mimeType = 'application/vnd.google-apps.folder';
+
+  // Create a multipart request
+  final request = http.MultipartRequest(
+    'POST',
+    Uri.parse(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'),
+  );
+
+  // Add headers
+  request.headers.addAll(authHeaders);
+
+  // Add file metadata as JSON
+  request.files.add(http.MultipartFile.fromString(
+    'metadata',
+    jsonEncode(fileMetadata),
+    contentType: MediaType('application', 'json'),
+  ));
+
+  // Send the request
+  final response = await request.send();
+
+  String driveId = '';
+
+  // Handle the response
+  if (response.statusCode == 200) {
+    debugPrint('A drive - $driveName has been uploaded successfully!');
+    final responseBody = await response.stream.bytesToString();
+    final jsonResponse = jsonDecode(responseBody);
+    final fileId = jsonResponse['id'] as String;
+    driveId = fileId;
+
+    // fileUrl = 'https://drive.google.com/drive/u/0/folders/$fileId';
+
+    //share permission
+    await shareFileWithUser(accessToken, fileId);
+  } else {
+    debugPrint('Error uploading file: ${response.reasonPhrase}');
+  }
+
+  client.close();
+
+  return driveId;
+}
+
+Future<String> uploadFileToDrive(String? accessToken, String filePath,
+    String uploadFilename, String? driveId,
+    {String mimeType = 'application/pdf'}) async {
   if (accessToken == null) {
     throw Exception(
         '[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
@@ -104,7 +219,8 @@ Future<String> uploadFileToDrive(
   // Create a file metadata object
   final fileMetadata = drive.File()
     ..name = filename // Set the desired filename
-    ..mimeType = mimeType;
+    ..mimeType = mimeType
+    ..parents = driveId != null ? [driveId] : [];
 
   // Create a multipart request
   final request = http.MultipartRequest(
