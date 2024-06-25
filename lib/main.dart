@@ -142,11 +142,11 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       // Get the access token
       final accessToken = await getAccessToken();
-      String? driveId;
+      String? driveId = await createNewDrive(accessToken, drive, rootDrive);
 
-      if (rootDrive.isNotEmpty) {
-        driveId = await createNewDrive(accessToken, drive, rootDrive);
-      }
+      // if (rootDrive.isNotEmpty) {
+      //  driveId = await createNewDrive(accessToken, drive, rootDrive);
+      // }
 
       for (String filePath in filePaths) {
         //reduce video quality
