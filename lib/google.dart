@@ -91,27 +91,41 @@ Future<drive.File?> getGoogleDriveFileByName(
   // Build the Drive API service
   final driveApi = drive.DriveApi(client);
 
-  try {
-    // Search for the file/folder by name
-    final fileList = await driveApi.files.list(
-      q: "name='$fileName'",
-      spaces: 'drive', // Search in "My Drive",
-      driveId: parentId,
-    );
+  // try {
+  // Search for the file/folder by name
+  final fileList = await driveApi.files.list(
+    // q: "name='$fileName'",
+    q: "mimeType='application/vnd.google-apps.folder' and name='$fileName'",
+    spaces: 'drive', // Search in "My Drive",
+    driveId: parentId,
+  );
 
-    // Return the first matching file/folder (if found)
-    debugPrint('fileList: ${fileList.toJson().toString()}');
-    if (fileList.files != null && fileList.files!.isNotEmpty) {
-      return fileList.files!.first;
-    } else {
-      return null;
-    }
-  } catch (e) {
-    debugPrint('Error searching for file/folder: $e');
+  // client.close();
+
+  // Return the first matching file/folder (if found)
+  debugPrint('fileList: ${fileList.toJson().toString()}');
+  debugPrint('fileList length: ${fileList.files?.length.toString()}');
+
+  if (fileList.files == null || fileList.files!.isEmpty) {
     return null;
-  } finally {
-    client.close();
+  } else if (fileList.files!.length > 1) {
+    throw Exception('[KKException]Có nhiều hơn 1 thư mục cùng tên');
+  } else {
+    return fileList.files!.first;
   }
+
+  if (fileList.files != null && fileList.files!.isNotEmpty) {
+    return fileList.files!.first;
+  } else {
+    return null;
+  }
+
+  // } catch (e) {
+  //   debugPrint('Error searching for file/folder: $e');
+  //   return null;
+  // } finally {
+  //   client.close();
+  // }
 }
 
 Future<String> createNewDrive(
@@ -160,7 +174,7 @@ Future<String> createNewDrive(
   final DateTime now = DateTime.now();
   final DateFormat formatter = DateFormat('yyyyMMdd');
   final String dateString = formatter.format(now);
-  String ggDriveName = driveName == null
+  String ggDriveName = driveName == null || driveName.isEmpty
       ? '${dateString}_$subFileName'
       : '${driveName}_$subFileName';
 

@@ -158,8 +158,8 @@ class _MyHomePageState extends State<MyHomePage> {
         //   }
         // }
 
-        String fileUrl = await uploadFileToDrive(
-            accessToken, filePath, filename, driveId,
+        // String fileUrl =;
+        await uploadFileToDrive(accessToken, filePath, filename, driveId,
             mimeType: mimeType);
 
         // fileUrls.add(fileUrl);
@@ -220,6 +220,7 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       setState(() {
         filename = '';
+        drive = '';
       });
 
       //clear textField
