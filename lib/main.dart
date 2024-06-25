@@ -357,8 +357,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         controller: _textController,
                         decoration: const InputDecoration(
                           hintText: 'Nhập tên file',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          contentPadding: EdgeInsets.only(bottom: 4),
+                          hintStyle: TextStyle(
+                              color: Colors.grey, fontWeight: FontWeight.w300),
+                          contentPadding: EdgeInsets.only(bottom: 0),
                         ),
                         autofocus: false,
                         onTapOutside: (e) {
@@ -390,8 +391,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           controller: _rootDriveController,
                           decoration: const InputDecoration(
                             hintText: 'Nhập thư mục gốc',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            contentPadding: EdgeInsets.only(top: 4),
+                            hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w300),
+                            contentPadding: EdgeInsets.only(top: 0),
                           ),
                           autofocus: false,
                           onTapOutside: (e) {
@@ -424,8 +427,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           controller: _driveController,
                           decoration: const InputDecoration(
                             hintText: 'Nhập thư mục lưu bài tập',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            contentPadding: EdgeInsets.only(top: 4),
+                            hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w300),
+                            contentPadding: EdgeInsets.only(top: 0),
                           ),
                           autofocus: false,
                           onTapOutside: (e) {
@@ -448,7 +453,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     margin: const EdgeInsets.only(
                         top: 8, left: 8, right: 0, bottom: 0),
                     alignment: Alignment.topLeft,
-                    child: const Text("Kết quả: "),
+                    child: const Text("Kết quả: ",
+                        style: TextStyle(
+                            color: Colors.blue, fontWeight: FontWeight.w500)),
                   ),
                   Flexible(
                     child: Container(
@@ -457,7 +464,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: Colors.blueGrey, // Border color
-                          width: 1.0, // Border width
+                          width: 1.2, // Border width
                         ),
                         borderRadius: BorderRadius.circular(
                             10.0), // Optional: Add rounded corners
@@ -486,7 +493,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   '${idx + 1}. ${fileUrls[idx]}',
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      decoration: TextDecoration.underline,
+                                      // decoration: TextDecoration.underline,
                                       color: Colors.blue),
                                 ),
                               ),
