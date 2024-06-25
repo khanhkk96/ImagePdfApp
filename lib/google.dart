@@ -82,7 +82,8 @@ Future<void> shareFileWithUser(String accessToken, String fileId,
 }
 
 Future<drive.File?> getGoogleDriveFileByName(
-    String accessToken, String fileName) async {
+    String accessToken, String fileName,
+    {String? parentId}) async {
   // Create a client for the Drive API
   final authHeaders = {'Authorization': 'Bearer $accessToken'};
   final client = GoogleAuthClient(authHeaders);
@@ -94,7 +95,8 @@ Future<drive.File?> getGoogleDriveFileByName(
     // Search for the file/folder by name
     final fileList = await driveApi.files.list(
       q: "name='$fileName'",
-      spaces: 'drive', // Search in "My Drive"
+      spaces: 'drive', // Search in "My Drive",
+      driveId: parentId,
     );
 
     // Return the first matching file/folder (if found)
@@ -112,7 +114,8 @@ Future<drive.File?> getGoogleDriveFileByName(
   }
 }
 
-Future<String> createNewDrive(String? accessToken, String? folder) async {
+Future<String> createNewDrive(
+    String? accessToken, String? driveName, String? parentDrive) async {
   if (accessToken == null) {
     throw Exception(
         '[KKException]Bạn chưa cấp quyền tải file lên Google Drive');
@@ -122,27 +125,50 @@ Future<String> createNewDrive(String? accessToken, String? folder) async {
     'Authorization': 'Bearer $accessToken',
   };
 
-  final client = http.Client();
+  String? rootDriveId;
 
-  if (folder != null && folder.isNotEmpty) {
-    var existedDrive = await getGoogleDriveFileByName(accessToken, folder);
-    debugPrint('drive: ${existedDrive?.toJson().toString()}');
+  if (parentDrive != null && parentDrive.isNotEmpty) {
+    var existedDrive = await getGoogleDriveFileByName(accessToken, parentDrive);
+    debugPrint('parent drive: ${existedDrive?.toJson().toString()}');
 
     if (existedDrive != null && existedDrive.id != null) {
-      return existedDrive.id.toString();
+      rootDriveId = existedDrive.id.toString();
+    } else {
+      final client = GoogleAuthClient(authHeaders);
+      final driveApi = drive.DriveApi(client);
+
+      final folder = drive.File();
+      folder.name = parentDrive;
+      folder.mimeType = 'application/vnd.google-apps.folder';
+
+      var driveData = await driveApi.files.create(folder);
+      rootDriveId = driveData.id;
+      client.close();
     }
   }
+
+  // if (driveName != null && driveName.isNotEmpty) {
+  //   var existedDrive = await getGoogleDriveFileByName(accessToken, driveName);
+  //   debugPrint('drive: ${existedDrive?.toJson().toString()}');
+  //
+  //   if (existedDrive != null && existedDrive.id != null) {
+  //     return existedDrive.id.toString();
+  //   }
+  // }
 
   String subFileName = randomString(length: 3);
   final DateTime now = DateTime.now();
   final DateFormat formatter = DateFormat('yyyyMMdd');
   final String dateString = formatter.format(now);
-  String driveName = folder ?? '${dateString}_$subFileName';
+  String ggDriveName = driveName == null
+      ? '${dateString}_$subFileName'
+      : '${driveName}_$subFileName';
 
   // Create a file metadata object
   final fileMetadata = drive.File()
-    ..name = driveName // Set the desired filename
-    ..mimeType = 'application/vnd.google-apps.folder';
+    ..name = ggDriveName // Set the desired filename
+    ..mimeType = 'application/vnd.google-apps.folder'
+    ..parents = rootDriveId != null ? [rootDriveId] : [];
 
   // Create a multipart request
   final request = http.MultipartRequest(
@@ -174,15 +200,11 @@ Future<String> createNewDrive(String? accessToken, String? folder) async {
     final fileId = jsonResponse['id'] as String;
     driveId = fileId;
 
-    // fileUrl = 'https://drive.google.com/drive/u/0/folders/$fileId';
-
     //share permission
     await shareFileWithUser(accessToken, fileId);
   } else {
     debugPrint('Error uploading file: ${response.reasonPhrase}');
   }
-
-  client.close();
 
   return driveId;
 }

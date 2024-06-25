@@ -57,11 +57,12 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> fileUrls = [];
   late String filename = '';
   late String drive = '';
+  late String rootDrive = '';
 
   // text field controller
   final _textController = TextEditingController();
-
   final _driveController = TextEditingController();
+  final _rootDriveController = TextEditingController();
 
   bool isProcessing = false;
   bool isLoading = false;
@@ -71,8 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint('data: $data');
     if (data != null) {
       setState(() {
-        drive = data[DRIVE];
-        _driveController.text = drive;
+        rootDrive = data[DRIVE];
+        _rootDriveController.text = rootDrive;
       });
     }
   }
@@ -89,6 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void dispose() {
     _textController.dispose();
     _driveController.dispose();
+    _rootDriveController.dispose();
     super.dispose();
   }
 
@@ -142,8 +144,8 @@ class _MyHomePageState extends State<MyHomePage> {
       final accessToken = await getAccessToken();
       String? driveId;
 
-      if (drive.isNotEmpty) {
-        driveId = await createNewDrive(accessToken, drive);
+      if (rootDrive.isNotEmpty) {
+        driveId = await createNewDrive(accessToken, drive, rootDrive);
       }
 
       for (String filePath in filePaths) {
@@ -159,17 +161,19 @@ class _MyHomePageState extends State<MyHomePage> {
         String fileUrl = await uploadFileToDrive(
             accessToken, filePath, filename, driveId,
             mimeType: mimeType);
-        fileUrls.add(fileUrl);
+
+        // fileUrls.add(fileUrl);
       }
+      fileUrls.add('https://drive.google.com/drive/u/0/folders/$driveId');
 
       //save drive name in local storage
       var data = await loadData();
 
-      if (data == null && drive.isNotEmpty) {
-        data = <String, String>{DRIVE: drive};
+      if (data == null && rootDrive.isNotEmpty) {
+        data = <String, String>{DRIVE: rootDrive};
         await saveData(data);
-      } else if (data != null && data[DRIVE] != drive) {
-        data[DRIVE] = drive;
+      } else if (data != null && data[DRIVE] != rootDrive) {
+        data[DRIVE] = rootDrive;
         await saveData(data);
       }
     } catch (ex) {
@@ -220,6 +224,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       //clear textField
       _textController.clear();
+      _driveController.clear();
 
       if (mounted) {
         notify(context, "Đã tải file pdf lên Google Drive ở chế độ công khai.",
@@ -289,7 +294,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                  flex: 10,
+                  flex: 9,
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     // Set top and left margins
@@ -373,7 +378,42 @@ class _MyHomePageState extends State<MyHomePage> {
                     width: 80,
                     margin: const EdgeInsets.only(
                         top: 0, left: 8, right: 0, bottom: 0),
-                    child: const Text("Thư mục: "),
+                    child: const Text("Thư mục gốc: ",
+                        style: TextStyle(fontSize: 12.5)),
+                  ),
+                  Flexible(
+                    child: Container(
+                        height: 40,
+                        margin: const EdgeInsets.only(left: 8, bottom: 8),
+                        width: MediaQuery.of(context).size.width / 1.9,
+                        child: TextField(
+                          controller: _rootDriveController,
+                          decoration: const InputDecoration(
+                            hintText: 'Nhập thư mục gốc',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            contentPadding: EdgeInsets.only(top: 4),
+                          ),
+                          autofocus: false,
+                          onTapOutside: (e) {
+                            FocusScope.of(context).unfocus();
+                          },
+                          onChanged: (text) {
+                            setState(() {
+                              rootDrive = text;
+                            });
+                          },
+                        )),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(
+                        top: 0, left: 8, right: 0, bottom: 0),
+                    child: const Text("Thư mục nộp: ",
+                        style: TextStyle(fontSize: 12.5)),
                   ),
                   Flexible(
                     child: Container(
@@ -383,7 +423,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: TextField(
                           controller: _driveController,
                           decoration: const InputDecoration(
-                            hintText: 'Nhập thư mục lưu',
+                            hintText: 'Nhập thư mục lưu bài tập',
                             hintStyle: TextStyle(color: Colors.grey),
                             contentPadding: EdgeInsets.only(top: 4),
                           ),
@@ -403,16 +443,16 @@ class _MyHomePageState extends State<MyHomePage> {
               Row(
                 children: [
                   Container(
-                    height: 70,
+                    height: 50,
                     width: 80,
                     margin: const EdgeInsets.only(
-                        top: 0, left: 12, right: 0, bottom: 0),
-                    alignment: Alignment.bottomLeft,
+                        top: 8, left: 8, right: 0, bottom: 0),
+                    alignment: Alignment.topLeft,
                     child: const Text("Kết quả: "),
                   ),
                   Flexible(
                     child: Container(
-                      height: 70,
+                      height: 50,
                       margin: const EdgeInsets.only(left: 4, right: 8),
                       decoration: BoxDecoration(
                         border: Border.all(
@@ -441,7 +481,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(
-                                    top: 4, left: 4, right: 12, bottom: 4),
+                                    top: 8, left: 4, right: 12, bottom: 8),
                                 child: Text(
                                   '${idx + 1}. ${fileUrls[idx]}',
                                   overflow: TextOverflow.ellipsis,
