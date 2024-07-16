@@ -7,10 +7,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:make_pdf/utils.dart';
 import 'package:path/path.dart' as path;
 
+import 'preview_image.dart';
 import 'google.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp, // Allow only portrait up orientation
+  ]).then((_) {
+    runApp(const MyApp());
+  });
+  // runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -248,7 +255,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final ImagePicker picker = ImagePicker();
     images = await picker.pickMultiImage();
-    pickedFiles = images;
+    pickedFiles.clear();
+    pickedFiles.addAll(images);
     setState(() {});
   }
 
@@ -280,6 +288,28 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
+  Future<void> _takePicture() async {
+    videos = [];
+
+    final ImagePicker picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+
+    if (photo != null) {
+      pickedFiles.add(photo);
+      images.add(photo);
+      setState(() {});
+    }
+  }
+
+  void showImagePopup(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ImagePopup(imageUrl: imageUrl);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -295,19 +325,24 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                  flex: 9,
+                  flex: 8,
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     // Set top and left margins
                     child: GridView.builder(
                         itemCount: pickedFiles.length,
                         itemBuilder: (ctx, index) {
-                          return SizedBox(
-                            height: MediaQuery.of(context).size.height,
-                            width: MediaQuery.of(context).size.width,
-                            child: Image.file(
-                              File(pickedFiles[index].path),
-                              fit: BoxFit.contain,
+                          return GestureDetector(
+                            onTap: () {
+                              showImagePopup(context, pickedFiles[index].path);
+                            },
+                            child: SizedBox(
+                              height: MediaQuery.of(context).size.height,
+                              width: MediaQuery.of(context).size.width,
+                              child: Image.file(
+                                File(pickedFiles[index].path),
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           );
                         },
@@ -322,6 +357,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   Container(
                     margin: const EdgeInsets.only(left: 8, top: 8),
+                    // Set top and left margins
+                    child: SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.photo_camera,
+                          color: Colors.orange,
+                        ),
+                        onPressed: _takePicture,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
                     // Set top and left margins
                     child: SizedBox(
                       height: 40,
@@ -350,28 +400,32 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                   ),
-                  Container(
-                      margin: const EdgeInsets.only(left: 8, bottom: 4),
-                      height: 40,
-                      width: MediaQuery.of(context).size.width / 1.9,
-                      child: TextField(
-                        controller: _textController,
-                        decoration: const InputDecoration(
-                          hintText: 'Nhập tên file',
-                          hintStyle: TextStyle(
-                              color: Colors.grey, fontWeight: FontWeight.w300),
-                          contentPadding: EdgeInsets.only(bottom: 0),
-                        ),
-                        autofocus: false,
-                        onTapOutside: (e) {
-                          FocusScope.of(context).unfocus();
-                        },
-                        onChanged: (text) {
-                          setState(() {
-                            filename = text;
-                          });
-                        },
-                      ))
+                  Flexible(
+                    child: Container(
+                        margin: const EdgeInsets.only(
+                            left: 8, bottom: 4, right: 10),
+                        height: 40,
+                        // width: MediaQuery.of(context).size.width / 1.9,
+                        child: TextField(
+                          controller: _textController,
+                          decoration: const InputDecoration(
+                            hintText: 'Nhập tên file',
+                            hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w300),
+                            contentPadding: EdgeInsets.only(bottom: 0),
+                          ),
+                          autofocus: false,
+                          onTapOutside: (e) {
+                            FocusScope.of(context).unfocus();
+                          },
+                          onChanged: (text) {
+                            setState(() {
+                              filename = text;
+                            });
+                          },
+                        )),
+                  )
                 ],
               )),
               Row(
@@ -386,8 +440,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   Flexible(
                     child: Container(
                         height: 40,
-                        margin: const EdgeInsets.only(left: 8, bottom: 8),
-                        width: MediaQuery.of(context).size.width / 1.9,
+                        margin: const EdgeInsets.only(
+                            left: 8, bottom: 8, right: 90),
+                        // width: MediaQuery.of(context).size.width / 1.9,
                         child: TextField(
                           controller: _rootDriveController,
                           decoration: const InputDecoration(
@@ -422,8 +477,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   Flexible(
                     child: Container(
                         height: 40,
-                        margin: const EdgeInsets.only(left: 8, bottom: 8),
-                        width: MediaQuery.of(context).size.width / 1.9,
+                        margin: const EdgeInsets.only(
+                            left: 8, bottom: 8, right: 90),
+                        // width: MediaQuery.of(context).size.width / 1.9,
                         child: TextField(
                           controller: _driveController,
                           decoration: const InputDecoration(

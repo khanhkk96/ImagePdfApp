@@ -104,9 +104,8 @@ Future<XFile?> generateThumbnail(String videoPath) async {
   debugPrint('gen thumbnail image from: $videoPath');
   final thumbnailImageData = await VideoThumbnail.thumbnailData(
     video: videoPath,
-    imageFormat: ImageFormat.JPEG,
     maxWidth: 128, // Specify the desired thumbnail size
-    quality: 25,
+    quality: 100,
   );
 
   if (thumbnailImageData != null) {
