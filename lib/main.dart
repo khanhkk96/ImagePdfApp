@@ -310,6 +310,20 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void removeFile(int index) {
+    pickedFiles.removeAt(index);
+
+    if (images.isNotEmpty) {
+      images.removeAt(index);
+    }
+
+    if (videos.isNotEmpty) {
+      videos.removeAt(index);
+    }
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -333,18 +347,41 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemCount: pickedFiles.length,
                         itemBuilder: (ctx, index) {
                           return GestureDetector(
-                            onTap: () {
-                              showImagePopup(context, pickedFiles[index].path);
-                            },
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.height,
-                              width: MediaQuery.of(context).size.width,
-                              child: Image.file(
-                                File(pickedFiles[index].path),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          );
+                              onTap: () {
+                                showImagePopup(
+                                    context, pickedFiles[index].path);
+                              },
+                              // child: SizedBox(
+                              //   height: MediaQuery.of(context).size.height,
+                              //   width: MediaQuery.of(context).size.width,
+                              //   child: Image.file(
+                              //     File(pickedFiles[index].path),
+                              //     fit: BoxFit.contain,
+                              //   ),
+                              // ),
+                              child: Stack(children: [
+                                SizedBox(
+                                  height: MediaQuery.of(context).size.height,
+                                  width: MediaQuery.of(context).size.width,
+                                  child: Image.file(
+                                    File(pickedFiles[index].path),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: -10,
+                                  right: 0,
+                                  child: IconButton(
+                                    onPressed: () {
+                                      removeFile(index);
+                                    },
+                                    icon: const Icon(
+                                      Icons.remove_circle_sharp,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                )
+                              ]));
                         },
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
