@@ -20,7 +20,7 @@ enum NotifyType {
 
 void notify(BuildContext context, String message, NotifyType type) {
   var mapTypes = <NotifyType, Color>{
-    NotifyType.success: Colors.blue,
+    NotifyType.success: const Color(0xFF3065CC),
     NotifyType.warning: Colors.orange,
     NotifyType.error: Colors.red,
   };

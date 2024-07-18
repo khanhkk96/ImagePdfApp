@@ -370,13 +370,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ),
                                 Positioned(
                                   top: -10,
-                                  right: 0,
+                                  right: -10,
                                   child: IconButton(
                                     onPressed: () {
                                       removeFile(index);
                                     },
                                     icon: const Icon(
-                                      Icons.remove_circle_sharp,
+                                      Icons.close_sharp,
                                       color: Colors.red,
                                     ),
                                   ),
@@ -577,7 +577,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     gravity: ToastGravity.BOTTOM,
                                     timeInSecForIosWeb: 2,
                                     backgroundColor: Colors.white,
-                                    textColor: Colors.cyan,
+                                    textColor: Colors.blueAccent,
                                     fontSize: 16.0);
                               },
                               child: Container(
@@ -607,7 +607,8 @@ class _MyHomePageState extends State<MyHomePage> {
               tooltip: 'Upload files',
               child: const Icon(
                 Icons.upload,
-                color: Colors.blueAccent,
+                color: Color(0xFF5279B7),
+                // color: Colors.black54,
               ),
             ),
           ),
