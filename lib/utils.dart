@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:video_compress/video_compress.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as path;
 
 enum NotifyType {
@@ -102,11 +101,13 @@ Future<String> makePdfFromImages(List<XFile> images) async {
 
 Future<XFile?> generateThumbnail(String videoPath) async {
   debugPrint('gen thumbnail image from: $videoPath');
-  final thumbnailImageData = await VideoThumbnail.thumbnailData(
-    video: videoPath,
-    maxWidth: 128, // Specify the desired thumbnail size
-    quality: 100,
-  );
+  // final thumbnailImageData = await VideoThumbnail.thumbnailData(
+  //   video: videoPath,
+  //   maxWidth: 128, // Specify the desired thumbnail size
+  //   quality: 100,
+  // );
+
+  final thumbnailImageData = await VideoCompress.getByteThumbnail(videoPath);
 
   if (thumbnailImageData != null) {
     // You can save the thumbnail to a file or use it directly
@@ -119,7 +120,7 @@ Future<XFile?> generateThumbnail(String videoPath) async {
 
     if (Platform.isAndroid) {
       filePath =
-          '${Directory('/storage/emulated/0/Download/temp').path}/${filename}_$subFileName.jpg';
+          '${Directory('/storage/emulated/0/Download/temp').path}/vThumlImg_${filename}_$subFileName.png';
 
       Directory newDirectory = Directory('/storage/emulated/0/Download/temp');
       await newDirectory.create(recursive: true);
@@ -145,7 +146,7 @@ Future<void> clearTempFiles(List<XFile> files) async {
   if (files.isNotEmpty) {
     for (var file in files) {
       File fileData = File(file.path);
-      if (fileData.existsSync()) {
+      if (file.name.contains("vThumlImg_") && fileData.existsSync()) {
         await fileData.delete();
       }
     }

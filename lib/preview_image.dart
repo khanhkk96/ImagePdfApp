@@ -31,7 +31,7 @@ class ImagePopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: Container(
+      child: SizedBox(
         width: 360, // Adjust width as needed
         height: 500, // Adjust height as needed
         child: Image.file(

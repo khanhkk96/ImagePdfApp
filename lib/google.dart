@@ -91,17 +91,14 @@ Future<drive.File?> getGoogleDriveFileByName(
   // Build the Drive API service
   final driveApi = drive.DriveApi(client);
 
-  // try {
   // Search for the file/folder by name
   final fileList = await driveApi.files.list(
-    // q: "name='$fileName'",
     q: "mimeType='application/vnd.google-apps.folder' and name='$fileName'",
     spaces: 'drive', // Search in "My Drive",
     driveId: parentId,
   );
 
-  // client.close();
-
+  client.close();
   // Return the first matching file/folder (if found)
   debugPrint('fileList: ${fileList.toJson().toString()}');
   debugPrint('fileList length: ${fileList.files?.length.toString()}');
@@ -113,19 +110,6 @@ Future<drive.File?> getGoogleDriveFileByName(
   } else {
     return fileList.files!.first;
   }
-
-  if (fileList.files != null && fileList.files!.isNotEmpty) {
-    return fileList.files!.first;
-  } else {
-    return null;
-  }
-
-  // } catch (e) {
-  //   debugPrint('Error searching for file/folder: $e');
-  //   return null;
-  // } finally {
-  //   client.close();
-  // }
 }
 
 Future<String> createNewDrive(
@@ -161,14 +145,14 @@ Future<String> createNewDrive(
     }
   }
 
-  // if (driveName != null && driveName.isNotEmpty) {
-  //   var existedDrive = await getGoogleDriveFileByName(accessToken, driveName);
-  //   debugPrint('drive: ${existedDrive?.toJson().toString()}');
-  //
-  //   if (existedDrive != null && existedDrive.id != null) {
-  //     return existedDrive.id.toString();
-  //   }
-  // }
+  if (driveName != null && driveName.isNotEmpty) {
+    var existedDrive = await getGoogleDriveFileByName(accessToken, driveName);
+    debugPrint('drive: ${existedDrive?.toJson().toString()}');
+
+    if (existedDrive != null && existedDrive.id != null) {
+      return existedDrive.id.toString();
+    }
+  }
 
   String subFileName = randomString(length: 3);
   final DateTime now = DateTime.now();
@@ -176,7 +160,8 @@ Future<String> createNewDrive(
   final String dateString = formatter.format(now);
   String ggDriveName = driveName == null || driveName.isEmpty
       ? '${dateString}_$subFileName'
-      : '${driveName}_$subFileName';
+      : driveName;
+  // : '${driveName}_$subFileName';
 
   // Create a file metadata object
   final fileMetadata = drive.File()
@@ -298,7 +283,7 @@ Future<String> uploadFileToDrive(String? accessToken, String filePath,
     fileUrl = 'https://drive.google.com/file/d/$fileId/view';
 
     //share permission
-    await shareFileWithUser(accessToken, fileId);
+    // await shareFileWithUser(accessToken, fileId);
   } else {
     await file.delete();
     debugPrint('Error uploading file: ${response.reasonPhrase}');

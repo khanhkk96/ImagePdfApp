@@ -17,7 +17,6 @@ void main() {
   ]).then((_) {
     runApp(const MyApp());
   });
-  // runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -87,7 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
 
     _loadData();
@@ -121,6 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
           backgroundColor: Colors.white,
           textColor: Colors.orange,
           fontSize: 16.0);
+
       if (mounted) {
         FocusScope.of(context).requestFocus(FocusNode());
       }
@@ -132,44 +131,34 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     List<String> filePaths = [];
-    String mimeType = 'application/pdf';
 
     if (images.isNotEmpty) {
       filePaths.add(await makePdfFromImages(images));
-    } else {
+    }
+
+    if (videos.isNotEmpty) {
       for (var file in videos) {
         filePaths.add(file.path);
       }
-      mimeType = 'video/mp4';
     }
-
-    // List<XFile> renderVideos = [];
 
     // Upload the PDF file
     try {
       // Get the access token
       final accessToken = await getAccessToken();
       String? driveId = await createNewDrive(accessToken, drive, rootDrive);
-
-      // if (rootDrive.isNotEmpty) {
-      //  driveId = await createNewDrive(accessToken, drive, rootDrive);
-      // }
+      Map<String, String> videoMimeTypes = {
+        '.mp4': 'video/mp4',
+        '.mov': 'video/quicktime',
+        '.wmv': 'video/x-ms-wmv',
+      };
 
       for (String filePath in filePaths) {
-        //reduce video quality
-        // if(mimeType == 'video/mp4'){
-        //   XFile? compressedVideo = await compressVideo(filePath);
-        //   if(compressedVideo != null){
-        //     filePath = compressedVideo.path;
-        //     renderVideos.add(compressedVideo);
-        //   }
-        // }
-
-        // String fileUrl =;
+        String ext = path.extension(filePath);
         await uploadFileToDrive(accessToken, filePath, filename, driveId,
-            mimeType: mimeType);
-
-        // fileUrls.add(fileUrl);
+            mimeType: ext == '.pdf'
+                ? 'application/pdf'
+                : (videoMimeTypes[ext] ?? 'video/mp4'));
       }
       fileUrls.add('https://drive.google.com/drive/u/0/folders/$driveId');
 
@@ -183,6 +172,8 @@ class _MyHomePageState extends State<MyHomePage> {
         data[DRIVE] = rootDrive;
         await saveData(data);
       }
+
+      _clearAllFiles();
     } catch (ex) {
       debugPrint(ex.toString());
       String message = ex.toString().replaceAll('Exception: ', '');
@@ -205,18 +196,18 @@ class _MyHomePageState extends State<MyHomePage> {
     } finally {
       await googleAccountSignOut();
 
-      if (videos.isNotEmpty) {
-        await clearTempFiles(pickedFiles);
+      // if (videos.isNotEmpty) {
+      //   await clearTempFiles(pickedFiles);
+      // }
+
+      if (images.isNotEmpty && filePaths[0].contains('.pdf')) {
+        File fileData = File(filePaths[0]);
+        await fileData.delete();
       }
 
       if (mounted) {
         FocusScope.of(context).requestFocus(FocusNode());
       }
-
-      // //delete render lower quality video
-      // if(renderVideos.isNotEmpty){
-      //   await clearTempFiles(renderVideos);
-      // }
     }
 
     if (fileUrls.isEmpty) {
@@ -247,33 +238,21 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _pickImages() async {
-    if (videos.isNotEmpty) {
-      await clearTempFiles(pickedFiles);
-    }
-
-    videos = [];
-
     final ImagePicker picker = ImagePicker();
-    images = await picker.pickMultiImage();
-    pickedFiles.clear();
-    pickedFiles.addAll(images);
+    var newImages = await picker.pickMultiImage();
+    images.addAll(newImages);
+    pickedFiles.addAll(newImages);
     setState(() {});
   }
 
   Future<void> _pickVideos() async {
-    images = [];
-    if (videos.isNotEmpty) {
-      await clearTempFiles(pickedFiles);
-    }
-
     final ImagePicker picker = ImagePicker();
-    videos = await picker.pickMultipleMedia();
-    pickedFiles.clear();
+    var newVideos = await picker.pickMultipleMedia();
+    videos.addAll(newVideos);
 
-    for (var vi in videos) {
-      if (path.extension(vi.path) != '.mp4') {
-        videos = [];
-
+    for (var vi in newVideos) {
+      if (path.extension(vi.path) != '.mp4' &&
+          path.extension(vi.path) != '.mov') {
         if (mounted) {
           notify(context, "Chỉ chọn video cần tải lên.", NotifyType.warning);
         }
@@ -285,12 +264,12 @@ class _MyHomePageState extends State<MyHomePage> {
         pickedFiles.add(thumbnailImage);
       }
     }
+
     setState(() {});
   }
 
+  // take pictures in person
   Future<void> _takePicture() async {
-    videos = [];
-
     final ImagePicker picker = ImagePicker();
     final XFile? photo = await picker.pickImage(source: ImageSource.camera);
 
@@ -299,6 +278,17 @@ class _MyHomePageState extends State<MyHomePage> {
       images.add(photo);
       setState(() {});
     }
+  }
+
+  Future<void> _clearAllFiles() async {
+    if (videos.isNotEmpty) {
+      await clearTempFiles(pickedFiles);
+    }
+    videos.clear();
+    images.clear();
+    pickedFiles.clear();
+
+    setState(() {});
   }
 
   void showImagePopup(BuildContext context, String imageUrl) {
@@ -310,15 +300,28 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void removeFile(int index) {
-    pickedFiles.removeAt(index);
+  Future<void> removeFile(int index) async {
+    XFile file = pickedFiles.removeAt(index);
 
     if (images.isNotEmpty) {
-      images.removeAt(index);
+      for (int i = 0; i < images.length; i++) {
+        if (file.name == images[i].name) {
+          images.removeAt(i);
+          break;
+        }
+      }
     }
 
     if (videos.isNotEmpty) {
-      videos.removeAt(index);
+      for (int i = 0; i < videos.length; i++) {
+        if (file.name.contains(videos[i].name.split(".")[0])) {
+          videos.removeAt(i);
+
+          File fileData = File(file.path);
+          await fileData.delete();
+          break;
+        }
+      }
     }
 
     setState(() {});
@@ -351,14 +354,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                 showImagePopup(
                                     context, pickedFiles[index].path);
                               },
-                              // child: SizedBox(
-                              //   height: MediaQuery.of(context).size.height,
-                              //   width: MediaQuery.of(context).size.width,
-                              //   child: Image.file(
-                              //     File(pickedFiles[index].path),
-                              //     fit: BoxFit.contain,
-                              //   ),
-                              // ),
                               child: Stack(children: [
                                 SizedBox(
                                   height: MediaQuery.of(context).size.height,
@@ -437,10 +432,25 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                   ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    // Set top and left margins
+                    child: SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.delete_sweep,
+                          color: Colors.grey,
+                        ),
+                        onPressed: _clearAllFiles,
+                      ),
+                    ),
+                  ),
                   Flexible(
                     child: Container(
                         margin: const EdgeInsets.only(
-                            left: 8, bottom: 4, right: 10),
+                            left: 8, bottom: 4, right: 12),
                         height: 40,
                         // width: MediaQuery.of(context).size.width / 1.9,
                         child: TextField(
@@ -554,7 +564,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Flexible(
                     child: Container(
                       height: 50,
-                      margin: const EdgeInsets.only(left: 4, right: 8),
+                      margin: const EdgeInsets.only(left: 4, right: 12),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: Colors.blueGrey, // Border color
@@ -608,7 +618,6 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Icon(
                 Icons.upload,
                 color: Color(0xFF5279B7),
-                // color: Colors.black54,
               ),
             ),
           ),
