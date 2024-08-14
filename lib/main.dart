@@ -200,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
       //   await clearTempFiles(pickedFiles);
       // }
 
-      if (images.isNotEmpty && filePaths[0].contains('.pdf')) {
+      if (filePaths[0].contains('.pdf')) {
         File fileData = File(filePaths[0]);
         await fileData.delete();
       }
